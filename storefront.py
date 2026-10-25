@@ -6,6 +6,8 @@ from typing import Any, Dict
 
 from flask import (
     Blueprint,
+    Response,
+    abort,
     current_app,
     flash,
     redirect,
@@ -24,6 +26,18 @@ from pricing import build_totals
 from supplier import supplier_status
 
 bp = Blueprint("storefront", __name__)
+
+
+@bp.get("/media/<path:filename>")
+def stored_image(filename: str):
+    """Serve an upload kept in the database (used on diskless hosts)."""
+    image = media.load_db_image(filename)
+    if image is None:
+        abort(404)
+    data, content_type = image
+    response = Response(data, mimetype=content_type)
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
 
 
 @bp.get("/")

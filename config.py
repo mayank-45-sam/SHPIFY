@@ -164,6 +164,11 @@ class Config:
     CLOUDINARY_URL = env_str("CLOUDINARY_URL", "")
     CLOUDINARY_FOLDER = env_str("CLOUDINARY_FOLDER", "shpify")
 
+    # Store uploaded images as rows in the database. This keeps custom designs
+    # alive on hosts without a persistent disk (Render free, etc.) even when
+    # Cloudinary is not configured. Leave off for local development.
+    STORE_UPLOADS_IN_DB = env_bool("STORE_UPLOADS_IN_DB", False)
+
     # --- Behaviour ----------------------------------------------------------
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
