@@ -254,7 +254,7 @@ free delivery paths:
 
 * **ntfy (no account).** Install the ntfy app on the phone, subscribe to the
   topic in `NTFY_TOPIC`, and every order arrives as a push notification.
-* **WhatsApp through CallMeBot (free).** Message `+34 644 51 95 23` on WhatsApp
+* **WhatsApp through CallMeBot (free).** Message `+34 623 78 64 49` on WhatsApp
   with `I allow callmebot to send me messages`. Paste the API key it replies
   with into `CALLMEBOT_API_KEY`; alerts then go to `ORDER_ALERT_PHONE`.
 * **Your own SMS gateway.** Set `SMS_WEBHOOK_URL` to a URL that accepts
