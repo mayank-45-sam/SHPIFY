@@ -44,7 +44,7 @@
       <div class="pdp__gallery">
         <div class="pdp__main">
           {% if product['images'] %}
-            <img src="{{ url_for('static', filename='img/products/' ~ product['images'][0]['filename']) }}"
+            <img src="{{ product_image_url(product['images'][0]['filename']) }}"
                  alt="{{ product['images'][0]['alt_text'] or product['name'] }}"
                  data-gallery-main width="682" height="875">
           {% else %}
@@ -56,9 +56,9 @@
           <div class="pdp__thumbs">
             {% for image in product['images'] %}
               <button type="button" class="pdp__thumb {% if loop.first %}is-active{% endif %}"
-                      data-gallery-thumb data-src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+                      data-gallery-thumb data-src="{{ product_image_url(image['filename']) }}"
                       aria-label="View image {{ loop.index }}">
-                <img src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+                <img src="{{ product_image_url(image['filename']) }}"
                      alt="{{ image['alt_text'] or product['name'] }}" loading="lazy">
               </button>
             {% endfor %}

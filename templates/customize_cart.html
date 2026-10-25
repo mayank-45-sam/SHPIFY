@@ -18,11 +18,11 @@
     <div class="checkout-grid">
       <div class="cart-panel">
         <h3 class="cart-panel__title">Front</h3>
-        <img src="{{ url_for('static', filename='img/custom/' ~ custom['front']) }}" alt="Front design" style="width:100%;border-radius:8px">
+        <img src="{{ custom_image_url(custom['front']) }}" alt="Front design" style="width:100%;border-radius:8px">
       </div>
       <div class="cart-panel">
         <h3 class="cart-panel__title">Back</h3>
-        <img src="{{ url_for('static', filename='img/custom/' ~ custom['back']) }}" alt="Back design" style="width:100%;border-radius:8px">
+        <img src="{{ custom_image_url(custom['back']) }}" alt="Back design" style="width:100%;border-radius:8px">
       </div>
     </div>
     <div class="cart-panel" style="margin-top:16px">

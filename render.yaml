@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: shpify
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bootstrap.py && gunicorn app:app --bind 0.0.0.0:$PORT --worker-class gthread --workers 1 --threads 4 --timeout 120 --access-logfile -
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_POOL_SIZE
+        value: "5"
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: shpify
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: STORE_NAME
+        value: Playbook Tees
+      - key: STORE_EMAIL
+        sync: false
+      - key: STORE_PHONE
+        sync: false
+      - key: STORE_ADDRESS
+        sync: false
+      - key: UPI_ID
+        sync: false
+      - key: UPI_PAYEE_NAME
+        sync: false
+      - key: COD_ENABLED
+        value: "1"
+      - key: QIKINK_SANDBOX_MODE
+        value: "1"
+      - key: QIKINK_CLIENT_ID
+        sync: false
+      - key: QIKINK_CLIENT_SECRET
+        sync: false
+      - key: QIKINK_SANDBOX_SECRET
+        sync: false

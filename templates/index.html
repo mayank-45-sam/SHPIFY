@@ -30,11 +30,11 @@
     <div class="hero__media">
       {% if featured %}
         {% set hero = featured[0] %}
-        <img src="{{ url_for('static', filename='img/products/' ~ hero['primary_image']) }}"
+        <img src="{{ product_image_url(hero['primary_image']) }}"
              alt="{{ hero['name'] }}" width="682" height="875" fetchpriority="high">
         <div class="hero__badge">&#8377;{{ hero['price_display'] }}</div>
       {% else %}
-        <img src="{{ url_for('static', filename='img/products/default.jpg') }}"
+        <img src="{{ product_image_url('default.jpg') }}"
              alt="{{ site_name }} graphic tee" width="682" height="875">
       {% endif %}
     </div>

@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, jsonify, request, session
 
+import media
 from catalog import get_product, size_availability
 from db import execute, query_all
 from pricing import build_totals
@@ -65,8 +66,8 @@ def cart_lines() -> List[Dict[str, Any]]:
         image = product["primary_image"]
         custom_front = (row["custom_front"] or "").strip()
         custom_back = (row["custom_back"] or "").strip()
-        custom_front_url = f"/static/img/custom/{custom_front}" if custom_front else None
-        custom_back_url = f"/static/img/custom/{custom_back}" if custom_back else None
+        custom_front_url = media.media_url(custom_front, "custom") or None
+        custom_back_url = media.media_url(custom_back, "custom") or None
         available = row["stock"] > 0 if product["stock_mode"] == "tracked" else True
         unit_price = int(row["variant_price_cents"] or 0) or int(product["price_cents"])
         quantity = int(row["quantity"])
@@ -80,7 +81,7 @@ def cart_lines() -> List[Dict[str, Any]]:
                 "category": product["category"],
                 "image": image,
                 "image_url": custom_front_url
-                or (f"/static/img/products/{image}" if image else None),
+                or (media.media_url(image, "products") if image else None),
                 "custom_front": custom_front,
                 "custom_back": custom_back,
                 "custom_front_url": custom_front_url,
@@ -240,7 +241,9 @@ def add_to_cart():
     payload["added_size"] = size
     payload["added_name"] = product["name"]
     payload["added_image"] = (
-        f"/static/img/products/{product['primary_image']}" if product["primary_image"] else None
+        media.media_url(product["primary_image"], "products")
+        if product["primary_image"]
+        else None
     )
     payload["added_unit_price_display"] = entry["price_display"]
     return jsonify(payload)

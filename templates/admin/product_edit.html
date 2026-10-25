@@ -192,7 +192,7 @@
         {% for image in product['images'] %}
           <div class="img-item">
             <div class="img-item__media">
-              <img src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+              <img src="{{ product_image_url(image['filename']) }}"
                    alt="{{ image['alt_text'] }}" loading="lazy">
             </div>
             <div class="img-item__body">

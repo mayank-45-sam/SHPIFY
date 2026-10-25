@@ -6,6 +6,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+import media
 from db import execute, execute_many, query_all, query_one, utcnow
 
 #: Order status values the admin area can set.
@@ -194,14 +195,14 @@ def get_order(order_id: int) -> Optional[Dict[str, Any]]:
         front = (item.get("custom_front") or "").strip()
         back = (item.get("custom_back") or "").strip()
         image = (item.get("image_filename") or "").strip()
-        item["custom_front_url"] = f"/static/img/custom/{front}" if front else ""
-        item["custom_back_url"] = f"/static/img/custom/{back}" if back else ""
+        item["custom_front_url"] = media.media_url(front, "custom") if front else ""
+        item["custom_back_url"] = media.media_url(back, "custom") if back else ""
+        item["custom_front_download_url"] = media.download_url(item["custom_front_url"])
+        item["custom_back_download_url"] = media.download_url(item["custom_back_url"])
         if front or back:
             item["image_url"] = item["custom_front_url"] or item["custom_back_url"]
-        elif image:
-            item["image_url"] = f"/static/img/products/{image}"
         else:
-            item["image_url"] = ""
+            item["image_url"] = media.media_url(image, "products") if image else ""
         order["items"].append(item)
     order["events"] = [
         dict(event)

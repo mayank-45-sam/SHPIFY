@@ -173,7 +173,7 @@
             <div class="summary-line">
               <div class="summary-line__media">
                 {% if line['image'] %}
-                  <img src="{{ url_for('static', filename='img/products/' ~ line['image']) }}"
+                  <img src="{{ product_image_url(line['image']) }}"
                        alt="{{ line['name'] }}" loading="lazy">
                 {% endif %}
               </div>

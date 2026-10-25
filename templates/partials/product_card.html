@@ -6,7 +6,7 @@
   <a class="card__media" href="{{ url_for('storefront.product_detail', slug=product['slug']) }}"
      aria-label="{{ product['name'] }}">
     {% if product['primary_image'] %}
-      <img src="{{ url_for('static', filename='img/products/' ~ product['primary_image']) }}"
+      <img src="{{ product_image_url(product['primary_image']) }}"
            alt="{{ product['name'] }}" loading="lazy" width="682" height="875">
     {% else %}
       <div class="empty" style="aspect-ratio:4/5;background:var(--bone-2)">

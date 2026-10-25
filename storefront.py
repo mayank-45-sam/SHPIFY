@@ -15,6 +15,7 @@ from flask import (
 )
 
 import catalog
+import media
 import reviews
 import wishlist
 from cart import cart_lines, cart_payload, cart_token
@@ -319,9 +320,8 @@ def site_context():
 @bp.route("/customize", methods=["GET", "POST"])
 def customize():
     """Customize a plain white t-shirt with front and back photos."""
-    from flask import current_app, session
+    from flask import session
     from security import validate_csrf
-    import os
     import uuid
 
     if request.method == "POST":
@@ -346,18 +346,20 @@ def customize():
             flash("Please upload valid image files (PNG, JPG, JPEG, GIF, WEBP).", "error")
             return redirect(url_for("storefront.customize"))
 
-        upload_dir = os.path.join(current_app.root_path, 'static', 'img', 'custom')
-        os.makedirs(upload_dir, exist_ok=True)
         ext_front = front.filename.rsplit('.', 1)[1].lower()
         ext_back = back.filename.rsplit('.', 1)[1].lower()
         fname_front = f"custom_{uuid.uuid4().hex}_front.{ext_front}"
         fname_back = f"custom_{uuid.uuid4().hex}_back.{ext_back}"
-        front.save(os.path.join(upload_dir, fname_front))
-        back.save(os.path.join(upload_dir, fname_back))
+        try:
+            stored_front = media.store_custom_image(front, fname_front)
+            stored_back = media.store_custom_image(back, fname_back)
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("storefront.customize"))
 
         session['custom_shirt'] = {
-            'front': fname_front,
-            'back': fname_back,
+            'front': stored_front,
+            'back': stored_back,
             'price_cents': 59900
         }
         flash("Photos uploaded! Preview and adjust your design.", "success")

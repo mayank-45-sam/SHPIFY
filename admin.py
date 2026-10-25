@@ -32,6 +32,7 @@ from werkzeug.utils import secure_filename
 
 import catalog
 import coupons
+import media
 import notifications
 import payments
 import returns
@@ -482,7 +483,7 @@ def product_duplicate(product_id: int):
 
 
 def _save_upload(file_storage) -> str:
-    """Validate, resize and store an uploaded image. Returns the filename."""
+    """Validate, resize and store an uploaded image. Returns its reference."""
     allowed = current_app.config["ALLOWED_IMAGE_EXTENSIONS"]
     original = secure_filename(file_storage.filename or "")
     extension = os.path.splitext(original)[1].lower()
@@ -491,11 +492,9 @@ def _save_upload(file_storage) -> str:
             f"Unsupported file type. Allowed: {', '.join(sorted(allowed))}."
         )
 
-    upload_dir = current_app.config["UPLOAD_DIR"]
-    upload_dir.mkdir(parents=True, exist_ok=True)
     stem = os.path.splitext(original)[0][:60] or "image"
     filename = f"{stem}-{secrets.token_hex(4)}.jpg"
-    target = upload_dir / filename
+    buffer = io.BytesIO()
 
     try:
         with Image.open(file_storage.stream) as image:
@@ -511,11 +510,13 @@ def _save_upload(file_storage) -> str:
             if max(image.size) > MAX_IMAGE_EDGE:
                 image.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE), Image.LANCZOS)
 
-            image.save(target, "JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
+            image.save(
+                buffer, "JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True
+            )
     except (UnidentifiedImageError, OSError) as exc:
         raise ValueError("That file could not be read as an image.") from exc
 
-    return filename
+    return media.store_product_image(buffer.getvalue(), filename)
 
 
 @bp.post("/products/<int:product_id>/images")

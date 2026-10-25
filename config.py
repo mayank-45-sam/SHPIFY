@@ -159,6 +159,11 @@ class Config:
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB per request
     ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
+    # Cloudinary keeps uploads when the host has no persistent disk.
+    # Format: cloudinary://<api_key>:<api_secret>@<cloud_name>
+    CLOUDINARY_URL = env_str("CLOUDINARY_URL", "")
+    CLOUDINARY_FOLDER = env_str("CLOUDINARY_FOLDER", "shpify")
+
     # --- Behaviour ----------------------------------------------------------
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

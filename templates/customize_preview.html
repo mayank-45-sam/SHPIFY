@@ -21,7 +21,7 @@
         <div class="tee-wrap">
           <img class="tee-base" src="{{ url_for('static', filename='img/custom/white-tee-new.png') }}" alt="White t-shirt">
           <div class="tee-print" id="front-print">
-            <img src="{{ url_for('static', filename='img/custom/' ~ custom['front']) }}" alt="Front design">
+            <img src="{{ custom_image_url(custom['front']) }}" alt="Front design">
           </div>
         </div>
         <div class="control">
@@ -42,7 +42,7 @@
         <div class="tee-wrap">
           <img class="tee-base" src="{{ url_for('static', filename='img/custom/white-tee-new.png') }}" alt="White t-shirt">
           <div class="tee-print" id="back-print">
-            <img src="{{ url_for('static', filename='img/custom/' ~ custom['back']) }}" alt="Back design">
+            <img src="{{ custom_image_url(custom['back']) }}" alt="Back design">
           </div>
         </div>
         <div class="control">

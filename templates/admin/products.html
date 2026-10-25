@@ -33,7 +33,7 @@
           <tr>
             <td>
               {% if product['primary_image'] %}
-                <img src="{{ url_for('static', filename='img/products/' ~ product['primary_image']) }}"
+                <img src="{{ product_image_url(product['primary_image']) }}"
                      alt="" class="table-thumb">
               {% else %}
                 <span class="table-thumb" style="display:inline-grid;place-items:center;font-size:10px;color:var(--muted)">none</span>

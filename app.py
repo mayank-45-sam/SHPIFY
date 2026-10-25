@@ -19,6 +19,7 @@ import admin
 import cart
 import checkout
 import db
+import media
 import storefront
 from config import Config
 from security import csrf_token
@@ -47,6 +48,8 @@ def create_app() -> Flask:
         return {
             "csrf_token": csrf_token,
             "money": format_rupees,
+            "product_image_url": lambda name: media.media_url(name, "products"),
+            "custom_image_url": lambda name: media.media_url(name, "custom"),
             "availability": size_availability,
             "sizes": ("XS", "S", "M", "L", "XL", "2XL"),
             "category_labels": {
