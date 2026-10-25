@@ -20,6 +20,7 @@ from pathlib import Path
 
 from app import create_app
 import db
+import notifications
 import payments
 import supplier
 import test_support
@@ -210,6 +211,69 @@ def main() -> int:
         check("the state is sent as province", address["province"] == "Karnataka")
         check("the pincode is sent as zip", address["zip"] == "560001")
         check("the country is India", address["country_code"] == "IN")
+
+        print("\n=== C2. New-order alert on the owner's phone ===")
+
+        class FakeResponse:
+            status_code = 200
+
+        calls = []
+
+        def fake_get(url, **kwargs):
+            calls.append({"url": url, **kwargs})
+            return FakeResponse()
+
+        app.config["ORDER_ALERT_PHONE"] = "8072674627"
+        app.config["CALLMEBOT_API_KEY"] = "test-callmebot-key"
+        app.config["NTFY_TOPIC"] = ""
+        app.config["SMS_WEBHOOK_URL"] = ""
+        original_get = notifications.requests.get
+        notifications.requests.get = fake_get
+        try:
+            sent = notifications.send_owner_alert("New order PT-1")
+        finally:
+            notifications.requests.get = original_get
+
+        check("the owner alert is sent", sent is True)
+        check("it uses CallMeBot", calls and calls[0]["url"].startswith(
+            "https://api.callmebot.com/whatsapp.php"))
+        check("it targets the owner number",
+              calls and calls[0]["params"]["phone"] == "+918072674627")
+        check("it sends the CallMeBot key",
+              calls and calls[0]["params"]["apikey"] == "test-callmebot-key")
+        check("it carries the alert text", "PT-1" in calls[0]["params"]["text"])
+
+        app.config["CALLMEBOT_API_KEY"] = ""
+        app.config["NTFY_TOPIC"] = "shpify-test-topic"
+        posts = []
+
+        def fake_post(url, **kwargs):
+            posts.append({"url": url, **kwargs})
+            return FakeResponse()
+
+        original_post = notifications.requests.post
+        notifications.requests.post = fake_post
+        try:
+            sent = notifications.send_owner_alert("New order PT-2")
+        finally:
+            notifications.requests.post = original_post
+
+        check("ntfy is used when WhatsApp is off", sent is True)
+        check("it posts to the ntfy topic",
+              posts and posts[0]["url"] == "https://ntfy.sh/shpify-test-topic")
+        check("the ntfy body carries the alert", b"PT-2" in posts[0]["data"])
+
+        app.config["CALLMEBOT_API_KEY"] = "test-callmebot-key"
+        app.config["NTFY_TOPIC"] = ""
+        calls.clear()
+        notifications.requests.get = fake_get
+        try:
+            notifications.notify_order_placed(order)
+        finally:
+            notifications.requests.get = original_get
+        check("placing an order alerts the owner",
+              any("PT-260101-ABCDE" in c["params"].get("text", "") for c in calls))
+        app.config["CALLMEBOT_API_KEY"] = ""
 
         print("\n=== D. Supplier is not connected ===")
         # Credentials in .env must not turn this offline test into a network call.

@@ -138,6 +138,17 @@ class Config:
     ORDER_ALERT_EMAIL = env_str("ORDER_ALERT_EMAIL", "")
     WHATSAPP_NUMBER = env_str("WHATSAPP_NUMBER", "")
 
+    # --- Owner alerts (new orders) -----------------------------------------
+    # The shop owner's own phone. Every new order is reported here.
+    ORDER_ALERT_PHONE = env_str("ORDER_ALERT_PHONE", "")
+    # Free WhatsApp delivery through CallMeBot (api.callmebot.com). Activate by
+    # messaging the CallMeBot number on WhatsApp once, then paste the API key.
+    CALLMEBOT_API_KEY = env_str("CALLMEBOT_API_KEY", "")
+    CALLMEBOT_PHONE = env_str("CALLMEBOT_PHONE", "")
+    # Free push notifications through ntfy.sh. Subscribe to the same topic in
+    # the ntfy app (Android/iOS) or at https://ntfy.sh/<topic>.
+    NTFY_TOPIC = env_str("NTFY_TOPIC", "")
+
     # --- Cart / marketing ---------------------------------------------------
     ABANDONED_CART_HOURS = env_int("ABANDONED_CART_HOURS", 2)
     REVIEWS_AUTO_APPROVE = env_bool("REVIEWS_AUTO_APPROVE", False)

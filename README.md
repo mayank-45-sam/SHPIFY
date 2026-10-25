@@ -246,6 +246,23 @@ Qikink and the SKU in the store can differ.
 
 ---
 
+### New-order alerts on your phone
+
+Every order placed on the site can alert the shop owner. Set
+`ORDER_ALERT_PHONE` to the number that should receive it, then pick one of the
+free delivery paths:
+
+* **ntfy (no account).** Install the ntfy app on the phone, subscribe to the
+  topic in `NTFY_TOPIC`, and every order arrives as a push notification.
+* **WhatsApp through CallMeBot (free).** Message `+34 644 51 95 23` on WhatsApp
+  with `I allow callmebot to send me messages`. Paste the API key it replies
+  with into `CALLMEBOT_API_KEY`; alerts then go to `ORDER_ALERT_PHONE`.
+* **Your own SMS gateway.** Set `SMS_WEBHOOK_URL` to a URL that accepts
+  `{"phone": "...", "message": "..."}` as JSON.
+
+With none of them configured, the alert is only written to the application log
+- the site does not pretend the owner was notified.
+
 ## Product images
 
 `python seed.py` copies the mockups from the project root into

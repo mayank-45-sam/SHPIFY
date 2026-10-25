@@ -83,6 +83,83 @@ def send_sms(phone: str, message: str) -> bool:
     return 200 <= response.status_code < 300
 
 
+def _owner_phone() -> str:
+    return (
+        (current_app.config.get("ORDER_ALERT_PHONE") or "").strip()
+        or (current_app.config.get("CALLMEBOT_PHONE") or "").strip()
+    )
+
+
+def _e164(phone: str) -> str:
+    digits = "".join(ch for ch in (phone or "") if ch.isdigit())
+    if len(digits) == 10:
+        digits = "91" + digits
+    return f"+{digits}" if digits else ""
+
+
+def send_owner_alert(message: str) -> bool:
+    """Tell the shop owner about a new order.
+
+    Tries, in order: free WhatsApp through CallMeBot, free push through
+    ntfy.sh, then the generic SMS webhook. Returns True when one of them
+    accepted the message. With nothing configured the alert is logged, so the
+    site never silently pretends the owner was told.
+    """
+    phone = _owner_phone()
+    callmebot_key = (current_app.config.get("CALLMEBOT_API_KEY") or "").strip()
+
+    if callmebot_key and phone:
+        try:
+            response = requests.get(
+                "https://api.callmebot.com/whatsapp.php",
+                params={
+                    "phone": _e164(phone),
+                    "text": message,
+                    "apikey": callmebot_key,
+                },
+                timeout=15,
+            )
+            if 200 <= response.status_code < 300:
+                return True
+            current_app.logger.warning(
+                "CALLMEBOT failed to=%s: HTTP %s", phone, response.status_code
+            )
+        except requests.RequestException as exc:  # pragma: no cover - network
+            current_app.logger.warning("CALLMEBOT failed to=%s: %s", phone, exc)
+
+    topic = (current_app.config.get("NTFY_TOPIC") or "").strip()
+    if topic:
+        try:
+            response = requests.post(
+                f"https://ntfy.sh/{quote(topic, safe='')}",
+                data=message.encode("utf-8"),
+                headers={
+                    "Title": f"New order - {current_app.config['STORE_NAME']}",
+                    "Tags": "shopping_cart",
+                    "Priority": "high",
+                },
+                timeout=15,
+            )
+            if 200 <= response.status_code < 300:
+                return True
+            current_app.logger.warning(
+                "NTFY failed topic=%s: HTTP %s", topic, response.status_code
+            )
+        except requests.RequestException as exc:  # pragma: no cover - network
+            current_app.logger.warning("NTFY failed topic=%s: %s", topic, exc)
+
+    webhook = (current_app.config.get("SMS_WEBHOOK_URL") or "").strip()
+    if webhook and phone:
+        if send_sms(phone, message):
+            return True
+
+    if not (callmebot_key or topic or webhook):
+        current_app.logger.info(
+            "OWNER ALERT (not configured) to=%s: %s", phone or "(no number)", message
+        )
+    return False
+
+
 def whatsapp_link(phone: str, message: str = "") -> str:
     digits = "".join(ch for ch in (phone or "") if ch.isdigit())
     if len(digits) == 10:
@@ -114,6 +191,25 @@ def order_summary(order: Dict) -> str:
     return "\n".join(lines)
 
 
+def owner_summary(order: Dict) -> str:
+    lines = [
+        f"New order {order['order_number']}",
+        f"Customer: {order['customer_name']} ({order.get('phone', '')})",
+        f"Total: {_rupees(order['total_cents'])}",
+        f"Payment: {order.get('payment_label') or order.get('payment_status', '')}",
+        "Items:",
+    ]
+    for item in order.get("items", []):
+        lines.append(
+            f"  - {item['product_name']} ({item['size']}) x{item['quantity']}"
+        )
+    city = order.get("city") or ""
+    pincode = order.get("pincode") or ""
+    if city or pincode:
+        lines.append(f"Ship to: {city} {pincode}".strip())
+    return "\n".join(lines)
+
+
 def notify_order_placed(order: Dict) -> None:
     subject = f"Order {order['order_number']} confirmed - {current_app.config['STORE_NAME']}"
     body = order_summary(order) + "\n\nWe will message you when it ships."
@@ -122,6 +218,7 @@ def notify_order_placed(order: Dict) -> None:
     if alert and alert != order.get("email"):
         send_email(alert, f"New order {order['order_number']}", order_summary(order))
     send_sms(order.get("phone", ""), f"Order {order['order_number']} confirmed. Total {_rupees(order['total_cents'])}.")
+    send_owner_alert(owner_summary(order))
 
 
 def notify_order_status(order: Dict, status: str) -> None:

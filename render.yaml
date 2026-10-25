@@ -44,6 +44,12 @@ services:
         sync: false
       - key: COD_ENABLED
         value: "1"
+      - key: ORDER_ALERT_PHONE
+        value: "8072674627"
+      - key: CALLMEBOT_API_KEY
+        sync: false
+      - key: NTFY_TOPIC
+        sync: false
       - key: QIKINK_SANDBOX_MODE
         value: "1"
       - key: QIKINK_CLIENT_ID
