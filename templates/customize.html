@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Customize Your T-Shirt - {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section section--tight">
+  <div class="wrap" style="max-width:900px">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <span>Customize T-Shirt</span>
+    </nav>
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Custom</span>
+        <h1 class="display" style="font-size:clamp(28px,5vw,46px)">Customize Your T-Shirt</h1>
+        <p class="card__note">Plain white T-shirt with your own photo. Upload 2 photos - 1 for front and 1 for back. Price: ?599</p>
+      </div>
+    </div>
+    <div class="cart-panel">
+      <img src="{{ url_for('static', filename='img/custom/white-tee-new.png') }}"
+           alt="Plain white t-shirt" style="display:block;width:100%;max-width:300px;margin:0 auto 18px;border-radius:12px">
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="front_photo"><strong>Photo 1 - Front</strong></label>
+          <input class="input" type="file" id="front_photo" name="front_photo" accept="image/*" required>
+        </div>
+        <div class="field">
+          <label for="back_photo"><strong>Photo 2 - Back</strong></label>
+          <input class="input" type="file" id="back_photo" name="back_photo" accept="image/*" required>
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">Upload & Preview - ?599</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

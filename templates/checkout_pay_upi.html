@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Pay for {{ order['order_number'] }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="wrap wrap--narrow">
+    <div class="confirm-card">
+      <div class="confirm-head">
+        <div>
+          <span class="eyebrow">Order {{ order['order_number'] }}</span>
+          <h1 class="display" style="margin-top:10px">Scan and pay</h1>
+        </div>
+        <span class="badge badge--live">UPI</span>
+      </div>
+
+      <p class="lede" style="margin-inline:auto">
+        Pay <strong>&#8377;{{ money(order['total_cents']) }}</strong> with any UPI app -
+        GPay, PhonePe, Paytm or BHIM. Open the app, scan the code and enter the
+        exact amount.
+      </p>
+
+      <div class="qr-panel">
+        {% if upi_qr %}
+          <img class="qr-panel__code" src="{{ upi_qr }}"
+               alt="UPI QR code for {{ site_name }}" width="320" height="320">
+        {% else %}
+          <img class="qr-panel__code" src="{{ upi['qr_url'] }}"
+               alt="UPI QR code for {{ site_name }}" width="320" height="320">
+        {% endif %}
+        <dl class="kv qr-panel__details">
+          <dt>UPI ID</dt>
+          <dd><strong>{{ upi['id'] }}</strong></dd>
+          {% if upi['payee_name'] %}
+            <dt>Pay to</dt>
+            <dd>{{ upi['payee_name'] }}</dd>
+          {% endif %}
+          <dt>Amount</dt>
+          <dd><strong>&#8377;{{ money(order['total_cents']) }}</strong></dd>
+          <dt>Order</dt>
+          <dd>{{ order['order_number'] }}</dd>
+        </dl>
+      </div>
+
+      <div class="notice notice--info" style="text-align:left;margin-top:18px">
+        <strong>The amount is already filled in.</strong>
+        Scan the code and your UPI app opens with the exact amount, so there is
+        nothing to type. We confirm every payment by hand, so your order starts
+        as soon as the money lands.
+      </div>
+
+      {% if upi_link %}
+        <a class="btn btn--dark btn--block" href="{{ upi_link }}" style="margin-top:18px">
+          Open my UPI app instead
+        </a>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('checkout.upi_payment_sent') }}" style="margin-top:18px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="order_number" value="{{ order['order_number'] }}">
+        <button class="btn btn--primary btn--block" type="submit">
+          I have made the payment
+        </button>
+      </form>
+
+      <p class="summary__note" style="margin-top:12px">
+        Trouble with the QR code?
+        <a href="{{ url_for('checkout.order_confirmation', order_number=order['order_number']) }}">View the order status</a>.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

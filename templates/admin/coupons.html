@@ -1,0 +1,107 @@
+{% extends "admin/base.html" %}
+{% block title %}Coupons{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Marketing</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Coupons</h1>
+  </div>
+</div>
+
+<div class="admin-grid admin-grid--2">
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">New coupon</h2></div>
+    <form method="post" action="{{ url_for('admin.coupon_new') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="code">Code</label>
+        <input class="input" id="code" name="code" required minlength="3" maxlength="32" placeholder="FIRST10">
+      </div>
+      <div class="field">
+        <label for="kind">Type</label>
+        <select class="input" id="kind" name="kind">
+          <option value="percent">Percent off</option>
+          <option value="flat">Flat amount off (Rs)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="value">Value (percent or rupees)</label>
+        <input class="input" id="value" name="value" inputmode="decimal" required placeholder="10">
+      </div>
+      <div class="field">
+        <label for="min_order">Minimum order (Rs)</label>
+        <input class="input" id="min_order" name="min_order" inputmode="decimal" placeholder="0">
+      </div>
+      <div class="field">
+        <label for="max_uses">Maximum uses (0 = unlimited)</label>
+        <input class="input" id="max_uses" name="max_uses" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="field">
+        <label for="expires_at">Expires on (optional)</label>
+        <input class="input" id="expires_at" name="expires_at" type="date">
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <input type="checkbox" name="active" checked> Active
+      </label>
+      <button class="btn btn--primary btn--block" type="submit">Create coupon</button>
+    </form>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">All coupons</h2></div>
+    {% if coupons %}
+      {% for coupon in coupons %}
+        <div style="padding:14px 0;border-bottom:1px solid #eee">
+          <form method="post" action="{{ url_for('admin.coupon_update', coupon_id=coupon['id']) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px">
+              <strong>{{ coupon['code'] }}</strong>
+              <span class="badge">{{ 'active' if coupon['active'] else 'inactive' }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <label style="font-size:12px">Code
+                <input class="input" name="code" value="{{ coupon['code'] }}" required>
+              </label>
+              <label style="font-size:12px">Type
+                <select class="input" name="kind">
+                  <option value="percent" {% if coupon['kind'] == 'percent' %}selected{% endif %}>Percent</option>
+                  <option value="flat" {% if coupon['kind'] == 'flat' %}selected{% endif %}>Flat Rs</option>
+                </select>
+              </label>
+              <label style="font-size:12px">Value
+                <input class="input" name="value" value="{{ coupon['value'] if coupon['kind'] == 'percent' else '%.2f'|format(coupon['value'] / 100) }}">
+              </label>
+              <label style="font-size:12px">Min order (Rs)
+                <input class="input" name="min_order" value="{{ '%.2f'|format(coupon['min_order_cents'] / 100) }}">
+              </label>
+              <label style="font-size:12px">Max uses
+                <input class="input" name="max_uses" value="{{ coupon['max_uses'] }}">
+              </label>
+              <label style="font-size:12px">Expires
+                <input class="input" name="expires_at" type="date" value="{{ (coupon['expires_at'] or '')[:10] }}">
+              </label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+              <label style="display:flex;gap:8px;align-items:center">
+                <input type="checkbox" name="active" {% if coupon['active'] %}checked{% endif %}> Active
+              </label>
+              <span class="summary__note">Used {{ coupon['used_count'] }}{% if coupon['max_uses'] %} / {{ coupon['max_uses'] }}{% endif %}</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn--dark btn--sm" type="submit">Save</button>
+            </div>
+          </form>
+          <form method="post" action="{{ url_for('admin.coupon_delete', coupon_id=coupon['id']) }}"
+                onsubmit="return confirm('Delete this coupon?')" style="margin-top:8px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--ghost btn--sm" type="submit">Delete</button>
+          </form>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="summary__note">No coupons yet. Create your first one on the left.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

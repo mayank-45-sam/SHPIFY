@@ -1,0 +1,249 @@
+{% extends "admin/base.html" %}
+{% block title %}Order {{ order['order_number'] }}{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow"><a href="{{ url_for('admin.orders_list') }}">Orders</a></span>
+    <h1 class="display" style="font-size:clamp(24px,4vw,34px)">{{ order['order_number'] }}</h1>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <span class="badge {% if order['payment_status'] == 'paid' %}badge--live{% elif order['payment_status'] == 'test_mode' %}badge--test{% endif %}">
+      {{ order['payment_status'] }}
+    </span>
+    <span class="badge">{{ order['status_label'] }}</span>
+  </div>
+</div>
+
+<div class="admin-grid admin-grid--2">
+  {#- Items -#}
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Items</h2></div>
+
+    <div class="table-scroll">
+      <table class="admin-table">
+        <thead><tr><th>Image</th><th>Product</th><th>Size</th><th>SKU</th><th>Qty</th><th>Total</th></tr></thead>
+        <tbody>
+          {% for item in order['items'] %}
+            <tr>
+              <td>
+                {% if item['custom_front_url'] or item['custom_back_url'] %}
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    {% if item['custom_front_url'] %}
+                      <a href="{{ item['custom_front_url'] }}" target="_blank" rel="noopener" title="Open front design">
+                        <img src="{{ item['custom_front_url'] }}" alt="Front design"
+                             class="table-thumb" style="width:64px;height:64px;object-fit:contain;background:#fff">
+                        <span style="display:block;text-align:center;font-size:10px;color:var(--muted);margin-top:2px">Front</span>
+                      </a>
+                    {% endif %}
+                    {% if item['custom_back_url'] %}
+                      <a href="{{ item['custom_back_url'] }}" target="_blank" rel="noopener" title="Open back design">
+                        <img src="{{ item['custom_back_url'] }}" alt="Back design"
+                             class="table-thumb" style="width:64px;height:64px;object-fit:contain;background:#fff">
+                        <span style="display:block;text-align:center;font-size:10px;color:var(--muted);margin-top:2px">Back</span>
+                      </a>
+                    {% endif %}
+                  </div>
+                {% elif item['image_filename'] %}
+                  <img src="{{ url_for('static', filename='img/products/' ~ item['image_filename']) }}" alt="" class="table-thumb">
+                {% else %}
+                  <span style="font-size:12px;color:var(--muted)">none</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ item['product_name'] }}
+                {% if item['custom_front'] or item['custom_back'] %}
+                  <span class="badge badge--test">Custom print</span>
+                {% endif %}
+              </td>
+              <td>{{ item['size'] }}</td>
+              <td style="font-size:12px;color:var(--muted)">{{ item['sku'] or '-' }}</td>
+              <td>{{ item['quantity'] }}</td>
+              <td>&#8377;{{ money(item['unit_price_cents'] * item['quantity']) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% for item in order['items'] %}
+      {% if item['custom_front_url'] or item['custom_back_url'] %}
+        <div style="margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:12px">
+          <h3 style="font-size:14px;font-weight:700;margin:0 0 10px">
+            Custom design - {{ item['product_name'] }} (size {{ item['size'] }})
+          </h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+            {% if item['custom_front_url'] %}
+              <figure style="margin:0">
+                <a href="{{ item['custom_front_url'] }}" target="_blank" rel="noopener">
+                  <img src="{{ item['custom_front_url'] }}" alt="Front design"
+                       style="width:100%;max-height:260px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px">
+                </a>
+                <figcaption style="font-size:12px;color:var(--muted);margin-top:6px">Front - click to open full size</figcaption>
+                <a class="btn btn--ghost" href="{{ item['custom_front_url'] }}"
+                   download="{{ item['custom_front'] }}"
+                   style="margin-top:8px;padding:6px 12px;font-size:12px">Download front image</a>
+              </figure>
+            {% endif %}
+            {% if item['custom_back_url'] %}
+              <figure style="margin:0">
+                <a href="{{ item['custom_back_url'] }}" target="_blank" rel="noopener">
+                  <img src="{{ item['custom_back_url'] }}" alt="Back design"
+                       style="width:100%;max-height:260px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px">
+                </a>
+                <figcaption style="font-size:12px;color:var(--muted);margin-top:6px">Back - click to open full size</figcaption>
+                <a class="btn btn--ghost" href="{{ item['custom_back_url'] }}"
+                   download="{{ item['custom_back'] }}"
+                   style="margin-top:8px;padding:6px 12px;font-size:12px">Download back image</a>
+              </figure>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <div class="summary" style="margin-top:14px">
+      <div class="summary__row"><span>Subtotal</span><span>&#8377;{{ money(order['subtotal_cents']) }}</span></div>
+      <div class="summary__row"><span>Shipping</span><span>&#8377;{{ money(order['shipping_cents']) }}</span></div>
+      <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(order['total_cents']) }}</span></div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;margin:18px 0 8px">Customer</h3>
+    <dl class="kv">
+      <dt>Name</dt><dd>{{ order['customer_name'] }}</dd>
+      <dt>Phone</dt><dd>{{ order['phone'] }}</dd>
+      <dt>Email</dt><dd>{{ order['email'] }}</dd>
+      <dt>Address</dt>
+      <dd>{{ order['address_line1'] }}{% if order['address_line2'] %}, {{ order['address_line2'] }}{% endif %}, {{ order['city'] }}, {{ order['state'] }} - {{ order['pincode'] }}</dd>
+      <dt>Placed</dt><dd>{{ order['created_at'][:16].replace('T', ' ') }}</dd>
+      {% if order['payment_ref'] %}<dt>Payment ref</dt><dd>{{ order['payment_ref'] }}</dd>{% endif %}
+      {% if order['razorpay_order_id'] %}<dt>Razorpay order</dt><dd>{{ order['razorpay_order_id'] }}</dd>{% endif %}
+      {% if order['supplier_ref'] %}<dt>Supplier ref</dt><dd>{{ order['supplier_ref'] }}</dd>{% endif %}
+      {% if order['notes'] %}<dt>Notes</dt><dd>{{ order['notes'] }}</dd>{% endif %}
+    </dl>
+  </div>
+
+  {#- Actions -#}
+  <div>
+    <div class="admin-card">
+      <div class="admin-card__head"><h2 class="admin-card__title">Status</h2></div>
+      <form method="post" action="{{ url_for('admin.order_status', order_id=order['id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="status">New status</label>
+          <select class="select" id="status" name="status" data-status-select>
+            {% for value in statuses %}
+              <option value="{{ value }}" {% if order['status'] == value %}selected{% endif %}>{{ status_labels[value] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="message">Note</label>
+          <input class="input" type="text" id="message" name="message" placeholder="Note for the customer timeline">
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">Update status</button>
+      </form>
+    </div>
+
+    <div class="admin-card" style="margin-top:16px">
+      <div class="admin-card__head"><h2 class="admin-card__title">Payment</h2></div>
+      {% if order['payment_status'] == 'paid' %}
+        <div class="notice notice--ok">
+          <strong>Payment received</strong>
+          {{ order['payment_method'] or 'payment' }}{% if order['payment_ref'] %} - {{ order['payment_ref'] }}{% endif %}
+        </div>
+      {% elif order['payment_status'] == 'test_mode' %}
+        <p class="summary__note">
+          This is a test order. No money was ever taken, so there is nothing to confirm.
+        </p>
+      {% else %}
+        <form method="post" action="{{ url_for('admin.order_payment', order_id=order['id']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="summary__note" style="margin-bottom:10px">
+            {% if order['payment_method'] == 'upi' %}
+              Check your UPI app for this amount, then confirm it here.
+            {% elif order['payment_method'] == 'cod' %}
+              This is a cash-on-delivery order. Confirm it here once the courier
+              has collected &#8377;{{ money(order['total_cents']) }}.
+            {% else %}
+              Mark the payment once the money has arrived.
+            {% endif %}
+          </p>
+          <div class="field">
+            <label for="payment_ref">Reference (optional)</label>
+            <input class="input" type="text" id="payment_ref" name="payment_ref"
+                   placeholder="UTR or transaction id">
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button class="btn btn--primary" type="submit" name="action" value="received">
+              Payment received
+            </button>
+            <button class="btn btn--danger" type="submit" name="action" value="not_received">
+              Not received
+            </button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="admin-card" style="margin-top:16px">
+      <div class="admin-card__head"><h2 class="admin-card__title">Tracking</h2></div>
+      <form method="post" action="{{ url_for('admin.order_tracking', order_id=order['id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="carrier">Carrier</label>
+          <input class="input" type="text" id="carrier" name="carrier" value="{{ order['carrier'] or '' }}"
+                 placeholder="Delhivery, Blue Dart, India Post">
+        </div>
+        <div class="field">
+          <label for="tracking_number">Tracking number</label>
+          <input class="input" type="text" id="tracking_number" name="tracking_number"
+                 value="{{ order['tracking_number'] or '' }}">
+        </div>
+        <button class="btn btn--dark btn--block" type="submit">Save tracking</button>
+      </form>
+    </div>
+
+    <div class="admin-card" style="margin-top:16px">
+      <div class="admin-card__head"><h2 class="admin-card__title">Print supplier</h2></div>
+      {% if supplier_status['configured'] %}
+        <form method="post" action="{{ url_for('admin.order_send_to_supplier', order_id=order['id']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="summary__note" style="margin-bottom:10px">
+            Sends this order to {{ supplier_status['name'] }} for printing and dispatch.
+          </p>
+          <button class="btn btn--primary btn--block" type="submit"
+                  data-confirm="Send this order to the supplier for printing?">Send to supplier</button>
+        </form>
+      {% else %}
+        <div class="notice notice--warn">
+          <strong>Not connected.</strong>
+          {{ supplier_status['message'] }}
+        </div>
+        <p class="summary__note" style="margin-top:10px">
+          Fulfil this order by hand until the supplier credentials are set.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="admin-card" style="margin-top:16px">
+      <div class="admin-card__head"><h2 class="admin-card__title">Timeline</h2></div>
+      {% if order['events'] %}
+        <ul class="timeline">
+          {% for event in order['events'] %}
+            <li class="timeline__item {% if loop.first %}timeline__item--current{% endif %}">
+              <span class="timeline__dot"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span>
+              <div>
+                <div class="timeline__title">{{ event['message'] or event['status'] }}</div>
+                <div class="timeline__meta">{{ event['created_at'][:16].replace('T', ' ') }}</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="summary__note">No events yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

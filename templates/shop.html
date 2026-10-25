@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Shop - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <span>Shop</span>
+    </nav>
+    <h1 class="display">
+      {% if active_category != 'all' %}{{ category_labels[active_category] }}{% else %}All tees{% endif %}
+    </h1>
+    <p>
+      {% if active_category != 'all' %}
+        {{ category_taglines.get(active_category, '') }}
+      {% else %}
+        Every graphic tee in the store. Filter it, search it, sort it.
+      {% endif %}
+    </p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    {#- Filters -#}
+    <form class="admin-grid admin-grid--2" method="get" action="{{ url_for('storefront.shop') }}"
+          style="align-items:end;margin-bottom:26px">
+      <div>
+        <div class="field" style="margin-bottom:8px">
+          <label>Category</label>
+          <div class="sizes">
+            <a class="size-pill {% if active_category == 'all' %}is-selected{% endif %}"
+               href="{{ url_for('storefront.shop', q=search, sort=sort) }}">All</a>
+            {% for category in categories %}
+              <a class="size-pill {% if active_category == category %}is-selected{% endif %}"
+                 href="{{ url_for('storefront.shop', category=category, q=search, sort=sort) }}">
+                {{ category_labels[category] }} ({{ counts.get(category, 0) }})
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field" style="margin-bottom:0">
+          <label for="q">Search</label>
+          <input class="input" type="search" id="q" name="q" value="{{ search }}"
+                 placeholder="Name or keyword" autocomplete="off">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label for="sort">Sort by</label>
+          <select class="select" id="sort" name="sort">
+            {% for value, label in sort_options.items() %}
+              <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <input type="hidden" name="category" value="{{ active_category }}">
+        <div class="field" style="margin-bottom:0;align-self:end">
+          <button class="btn btn--dark btn--block" type="submit">Apply</button>
+        </div>
+      </div>
+    </form>
+
+    {#- Result count -#}
+    <p class="summary__note" style="margin-bottom:16px">
+      {{ products|length }} product{% if products|length != 1 %}s{% endif %}
+      {% if search %}matching "{{ search }}"{% endif %}
+    </p>
+
+    {% if products %}
+      <div class="product-grid">
+        {% for product in products %}
+          {% include "partials/product_card.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <div class="empty__icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </div>
+        <h3>Nothing here yet</h3>
+        <p>
+          {% if search %}
+            No tees match "{{ search }}". Try a different word or clear the filters.
+          {% else %}
+            This collection is still being printed. Check back soon.
+          {% endif %}
+        </p>
+        <a class="btn btn--dark" href="{{ url_for('storefront.shop') }}">Show all tees</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

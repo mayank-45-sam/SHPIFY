@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} - {{ site_tagline }}{% endblock %}
+
+{% block content %}
+{#- Hero -#}
+<section class="hero">
+  <div class="wrap hero__inner">
+    <div class="hero__copy">
+      <span class="eyebrow" style="color:#9C9CA5">Graphic tees, printed to order</span>
+      <h1 class="display">Wear the <span class="highlight">match</span>.</h1>
+      <p class="lede">
+        Heavyweight graphic tees for cricket nights, superhero mornings and
+        football afternoons. Printed one at a time, packed with care, shipped
+        across India.
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="{{ url_for('storefront.shop') }}">Shop all tees</a>
+        <a class="btn btn--accent" href="{{ url_for('storefront.customize') }}">Customize your t-shirt</a>
+        <a class="btn btn--ghost" style="--btn-fg:#fff;--btn-border:#3A3A42" href="{{ url_for('storefront.shop', category='cricket') }}">Cricket collection</a>
+      </div>
+
+      <div class="hero__stats">
+        <div class="hero__stat"><b>{{ counts.get('cricket', 0) }}</b><span>Cricket tees</span></div>
+        <div class="hero__stat"><b>{{ counts.get('superheroes', 0) }}</b><span>Superhero tees</span></div>
+        <div class="hero__stat"><b>{{ counts.get('football', 0) }}</b><span>Football tees</span></div>
+        <div class="hero__stat"><b>&#8377;{{ free_shipping_threshold }}+</b><span>Free shipping</span></div>
+      </div>
+    </div>
+
+    <div class="hero__media">
+      {% if featured %}
+        {% set hero = featured[0] %}
+        <img src="{{ url_for('static', filename='img/products/' ~ hero['primary_image']) }}"
+             alt="{{ hero['name'] }}" width="682" height="875" fetchpriority="high">
+        <div class="hero__badge">&#8377;{{ hero['price_display'] }}</div>
+      {% else %}
+        <img src="{{ url_for('static', filename='img/products/default.jpg') }}"
+             alt="{{ site_name }} graphic tee" width="682" height="875">
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{#- Categories -#}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Collections</span>
+        <h2 class="display">Pick your side</h2>
+      </div>
+      <a class="link-arrow" href="{{ url_for('storefront.shop') }}">View everything</a>
+    </div>
+
+    <div class="cat-grid">
+      {% for category in categories %}
+        <a class="cat-card" href="{{ url_for('storefront.shop', category=category) }}">
+          <span class="cat-card__n">0{{ loop.index }}</span>
+          <h3>{{ category_labels[category] }}</h3>
+          <p>{{ category_taglines[category] }}</p>
+          <span class="cat-card__cta">{{ counts.get(category, 0) }} designs &rarr;</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{#- Featured -#}
+{% if featured %}
+<section class="section section--paper">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Handpicked</span>
+        <h2 class="display">Featured drops</h2>
+      </div>
+      <a class="link-arrow" href="{{ url_for('storefront.shop') }}">Shop all</a>
+    </div>
+
+    <div class="product-grid">
+      {% for product in featured %}
+        {% include "partials/product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{#- Bestsellers -#}
+{% if bestsellers %}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Moving fast</span>
+        <h2 class="display">The latest tees</h2>
+      </div>
+      <a class="link-arrow" href="{{ url_for('storefront.shop', sort='newest') }}">See what's new</a>
+    </div>
+
+    <div class="product-grid">
+      {% for product in bestsellers %}
+        {% include "partials/product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{#- Promise strip -#}
+<section class="section section--dark">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Why us</span>
+        <h2 class="display">Built for the long haul</h2>
+      </div>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card" style="background:var(--ink-2)">
+        <h3>Printed to order</h3>
+        <p>No dead stock, no leftovers. Your tee is pressed when you order it.</p>
+      </div>
+      <div class="cat-card" style="background:var(--ink-2)">
+        <h3>Free over &#8377;{{ free_shipping_threshold }}</h3>
+        <p>Flat &#8377;{{ shipping_fee }} shipping on everything else, all India.</p>
+      </div>
+      <div class="cat-card" style="background:var(--ink-2)">
+        <h3>Easy tracking</h3>
+        <p>Every order gets a number and a tracking page the moment it ships.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Pay for {{ order['order_number'] }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="wrap wrap--narrow">
+    <div class="confirm-card" style="text-align:center">
+      <span class="eyebrow" style="justify-content:center">Order {{ order['order_number'] }}</span>
+      <h1 class="display" style="margin:14px 0 10px">One step away</h1>
+      <p class="lede" style="margin-inline:auto">
+        Pay &#8377;{{ money(order['total_cents']) }} for order {{ order['order_number'] }}
+        placed on {{ order['created_at'][:10] }}.
+      </p>
+
+      <div class="notice notice--info" style="text-align:left;margin-top:18px">
+        <strong>Opening the secure payment window</strong>
+        Razorpay handles the payment. We only mark your order as paid after the
+        server verifies the signature that Razorpay returns.
+      </div>
+
+      <button class="btn btn--primary btn--block" style="margin-top:18px" id="pay-button">
+        Pay &#8377;{{ money(order['total_cents']) }} now
+      </button>
+
+      <p class="summary__note" style="margin-top:12px">
+        Trouble with the payment window?
+        <a href="{{ url_for('checkout.order_confirmation', order_number=order['order_number']) }}">View the order status</a>.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<script>
+  (function () {
+    var payload = {{ payload | tojson }};
+    var button = document.getElementById("pay-button");
+
+    function verify(response) {
+      var body = {
+        order_number: payload.order_number,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature
+      };
+      fetch("/checkout/api/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+        },
+        body: JSON.stringify(body)
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.ok && data.redirect) {
+            window.location.href = data.redirect;
+          } else {
+            window.location.href = "/checkout/order/" + payload.order_number;
+          }
+        })
+        .catch(function () {
+          window.location.href = "/checkout/order/" + payload.order_number;
+        });
+    }
+
+    function openCheckout() {
+      if (typeof Razorpay === "undefined") {
+        window.location.href = "/checkout/order/" + payload.order_number;
+        return;
+      }
+      var options = {
+        key: payload.key_id,
+        amount: payload.amount,
+        currency: payload.currency,
+        name: {{ storefront_name | tojson }},
+        description: "Order " + payload.order_number,
+        order_id: payload.order_id,
+        handler: verify,
+        prefill: {},
+        notes: { order_number: payload.order_number },
+        theme: { color: "#0C0C0D" },
+        modal: {
+          ondismiss: function () {
+            window.location.href = "/checkout/order/" + payload.order_number;
+          }
+        }
+      };
+      new Razorpay(options).open();
+    }
+
+    button.addEventListener("click", openCheckout);
+    window.setTimeout(openCheckout, 600);
+  })();
+</script>
+{% endblock %}

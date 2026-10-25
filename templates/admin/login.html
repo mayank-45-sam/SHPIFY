@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="admin-login" style="margin:-22px calc(-1 * var(--gutter)) -60px">
+  <form class="admin-login__card" method="post" action="{{ url_for('admin.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <span class="eyebrow">Admin area</span>
+    <h1 class="display" style="font-size:30px;margin:10px 0 18px">Sign in</h1>
+
+    {% if error %}
+      <div class="notice notice--error" style="margin-bottom:16px">{{ error }}</div>
+    {% endif %}
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input class="input" type="text" id="username" name="username" autocomplete="username" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+
+    <button class="btn btn--primary btn--block" type="submit">Sign in</button>
+
+    <p class="summary__note" style="margin-top:14px">
+      The account is configured with <code>ADMIN_USERNAME</code> and
+      <code>ADMIN_PASSWORD_HASH</code> in your <code>.env</code> file.
+    </p>
+  </form>
+</div>
+{% endblock %}

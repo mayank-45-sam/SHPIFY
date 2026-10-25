@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Catalog</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Products</h1>
+  </div>
+  <a class="btn btn--primary btn--sm" href="{{ url_for('admin.product_new') }}">New product</a>
+</div>
+
+<div class="sizes" style="margin-bottom:16px">
+  <a class="size-pill {% if active_category == 'all' %}is-selected{% endif %}"
+     href="{{ url_for('admin.products_list') }}">All</a>
+  {% for category in categories %}
+    <a class="size-pill {% if active_category == category %}is-selected{% endif %}"
+       href="{{ url_for('admin.products_list', category=category) }}">{{ category_labels[category] }}</a>
+  {% endfor %}
+</div>
+
+{% if products %}
+  <div class="table-scroll">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Image</th><th>Name</th><th>Category</th><th>Price</th>
+          <th>Stock</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+          <tr>
+            <td>
+              {% if product['primary_image'] %}
+                <img src="{{ url_for('static', filename='img/products/' ~ product['primary_image']) }}"
+                     alt="" class="table-thumb">
+              {% else %}
+                <span class="table-thumb" style="display:inline-grid;place-items:center;font-size:10px;color:var(--muted)">none</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('admin.product_edit', product_id=product['id']) }}"><strong>{{ product['name'] }}</strong></a>
+              {% if product['needs_review'] %}<br><span class="badge badge--review">needs review</span>{% endif %}
+            </td>
+            <td>{{ category_labels.get(product['category'], product['category']) }}</td>
+            <td>&#8377;{{ product['price_display'] }}</td>
+            <td>
+              {% if product['stock_mode'] == 'made_to_order' %}
+                <span style="font-size:12.5px;color:var(--muted)">Made to order</span>
+              {% else %}
+                {{ product['in_stock_total'] }} units
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge--{{ 'published' if product['status'] == 'published' else 'draft' }}">
+                {{ product['status'] }}
+              </span>
+            </td>
+            <td style="text-align:right">
+              <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.product_edit', product_id=product['id']) }}">Edit</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty">
+    <div class="empty__icon">
+      <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+    </div>
+    <h3>No products yet</h3>
+    <p>Add your first design and it appears in the storefront straight away.</p>
+    <a class="btn btn--primary" href="{{ url_for('admin.product_new') }}">New product</a>
+  </div>
+{% endif %}
+{% endblock %}

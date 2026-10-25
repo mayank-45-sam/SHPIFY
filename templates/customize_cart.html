@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Review Your Custom T-Shirt - {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section section--tight">
+  <div class="wrap" style="max-width:900px">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.customize') }}">Customize</a>
+      <span>/</span>
+      <span>Review</span>
+    </nav>
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Custom</span>
+        <h1 class="display" style="font-size:clamp(28px,5vw,46px)">Your Custom Design</h1>
+        <p class="card__note">Plain white T-shirt - Front & Back photos</p>
+      </div>
+    </div>
+    <div class="checkout-grid">
+      <div class="cart-panel">
+        <h3 class="cart-panel__title">Front</h3>
+        <img src="{{ url_for('static', filename='img/custom/' ~ custom['front']) }}" alt="Front design" style="width:100%;border-radius:8px">
+      </div>
+      <div class="cart-panel">
+        <h3 class="cart-panel__title">Back</h3>
+        <img src="{{ url_for('static', filename='img/custom/' ~ custom['back']) }}" alt="Back design" style="width:100%;border-radius:8px">
+      </div>
+    </div>
+    <div class="cart-panel" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong style="font-size:18px">Plain White Custom T-Shirt</strong>
+          <p class="card__note">Price: ₹{{ price_display }}</p>
+        </div>
+        <form method="post" action="{{ url_for('storefront.customize_add') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn--primary" type="submit">Add to Cart - ₹{{ price_display }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

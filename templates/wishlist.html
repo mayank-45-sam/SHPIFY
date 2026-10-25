@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Wishlist - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Saved for later</span>
+        <h1 class="display">Your wishlist</h1>
+        <p class="section-head__note">Tap the heart on any tee to keep it here.</p>
+      </div>
+    </div>
+
+    {% if products %}
+      <div class="product-grid">
+        {% for product in products %}
+          {% include "partials/product_card.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <p>Nothing saved yet.</p>
+        <a class="btn btn--primary" href="{{ url_for('storefront.shop') }}">Browse the shop</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

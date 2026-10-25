@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Preview Your Design - {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section section--tight" style="background:linear-gradient(120deg, #0f2027, #203a43, #2c5364);min-height:90vh">
+  <div class="wrap" style="max-width:1100px">
+    <nav class="breadcrumb" aria-label="Breadcrumb" style="color:#fff">
+      <a href="{{ url_for('storefront.customize') }}" style="color:#fff">Customize</a>
+      <span>/</span>
+      <span style="color:#fff">Preview</span>
+    </nav>
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow" style="color:#D8FF3E">Custom</span>
+        <h1 class="display" style="font-size:clamp(28px,5vw,46px);color:#fff">Design Preview</h1>
+        <p class="card__note" style="color:#cbd5e1">Your design on plain white t-shirt - adjust size & position</p>
+      </div>
+    </div>
+    <div class="checkout-grid" style="align-items:start">
+      <div class="cart-panel" style="background:rgba(15,23,42,0.7);backdrop-filter:blur(12px);border:1px solid rgba(148,163,184,0.3);border-radius:16px">
+        <h3 class="cart-panel__title" style="color:#fff;text-align:center">FRONT</h3>
+        <div class="tee-wrap">
+          <img class="tee-base" src="{{ url_for('static', filename='img/custom/white-tee-new.png') }}" alt="White t-shirt">
+          <div class="tee-print" id="front-print">
+            <img src="{{ url_for('static', filename='img/custom/' ~ custom['front']) }}" alt="Front design">
+          </div>
+        </div>
+        <div class="control">
+          <label style="color:#fff">Size</label>
+          <input type="range" min="20" max="60" value="38" id="front-scale">
+        </div>
+        <div class="control">
+          <label style="color:#fff">Vertical</label>
+          <input type="range" min="20" max="50" value="35" id="front-y">
+        </div>
+        <div class="control">
+          <label style="color:#fff">Horizontal</label>
+          <input type="range" min="35" max="65" value="50" id="front-x">
+        </div>
+      </div>
+      <div class="cart-panel" style="background:rgba(15,23,42,0.7);backdrop-filter:blur(12px);border:1px solid rgba(148,163,184,0.3);border-radius:16px">
+        <h3 class="cart-panel__title" style="color:#fff;text-align:center">BACK</h3>
+        <div class="tee-wrap">
+          <img class="tee-base" src="{{ url_for('static', filename='img/custom/white-tee-new.png') }}" alt="White t-shirt">
+          <div class="tee-print" id="back-print">
+            <img src="{{ url_for('static', filename='img/custom/' ~ custom['back']) }}" alt="Back design">
+          </div>
+        </div>
+        <div class="control">
+          <label style="color:#fff">Size</label>
+          <input type="range" min="20" max="60" value="38" id="back-scale">
+        </div>
+        <div class="control">
+          <label style="color:#fff">Vertical</label>
+          <input type="range" min="20" max="50" value="35" id="back-y">
+        </div>
+        <div class="control">
+          <label style="color:#fff">Horizontal</label>
+          <input type="range" min="35" max="65" value="50" id="back-x">
+        </div>
+      </div>
+    </div>
+    <div class="cart-panel" style="margin-top:16px;background:rgba(15,23,42,0.7);backdrop-filter:blur(12px);border:1px solid rgba(148,163,184,0.3);border-radius:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <strong style="font-size:18px;color:#fff">Plain White Custom T-Shirt - Front & Back</strong>
+          <p class="card__note" style="color:#cbd5e1">?{{ price_display }}</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn--ghost" href="{{ url_for('storefront.customize') }}" style="color:#fff;border-color:rgba(148,163,184,0.5)">Change Photos</a>
+          <form method="post" action="{{ url_for('storefront.customize_add') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--primary" type="submit">Add to Cart - ?{{ price_display }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.tee-wrap{position:relative;width:100%;max-width:380px;margin:0 auto 20px;aspect-ratio:4/5}
+.tee-base{width:100%;height:100%;object-fit:contain;display:block;filter:none}
+.tee-print{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);width:38%;pointer-events:none}
+.tee-print img{width:100%;height:auto;display:block}
+.control{margin-bottom:12px}
+.control label{display:block;font-size:12px;margin-bottom:6px}
+.control input{width:100%}
+</style>
+
+<script>
+function updateFront(){
+  const s = document.getElementById('front-scale').value;
+  const y = document.getElementById('front-y').value;
+  const x = document.getElementById('front-x').value;
+  const p = document.getElementById('front-print');
+  p.style.width = s + '%';
+  p.style.left = x + '%';
+  p.style.top = y + '%';
+  p.style.transform = 'translate(-50%,-50%)';
+}
+function updateBack(){
+  const s = document.getElementById('back-scale').value;
+  const y = document.getElementById('back-y').value;
+  const x = document.getElementById('back-x').value;
+  const p = document.getElementById('back-print');
+  p.style.width = s + '%';
+  p.style.left = x + '%';
+  p.style.top = y + '%';
+  p.style.transform = 'translate(-50%,-50%)';
+}
+['front-scale','front-y','front-x'].forEach(id=>document.getElementById(id).addEventListener('input',updateFront));
+['back-scale','back-y','back-x'].forEach(id=>document.getElementById(id).addEventListener('input',updateBack));
+updateFront(); updateBack();
+</script>
+{% endblock %}

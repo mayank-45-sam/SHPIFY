@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}Abandoned carts{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Recovery</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Abandoned carts</h1>
+    <p class="section-head__note">Carts with items and no order in the last {{ hours }} hours.</p>
+  </div>
+</div>
+
+<div class="admin-card">
+  {% if carts %}
+    <div class="table-scroll">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Cart</th><th>Products</th><th>Units</th><th>Last activity</th></tr>
+        </thead>
+        <tbody>
+          {% for cart in carts %}
+            <tr>
+              <td style="font-size:12px">{{ cart['cart_token'][:14] }}…</td>
+              <td>
+                {% for name in cart['product_names'] %}
+                  {{ name }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+                {% if cart['lines'] > cart['product_names']|length %}
+                  <br><span class="summary__note">+{{ cart['lines'] - cart['product_names']|length }} more</span>
+                {% endif %}
+              </td>
+              <td>{{ cart['items'] }}</td>
+              <td>{{ cart['since'][:16].replace('T', ' ') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="summary__note">No abandoned carts right now.</p>
+  {% endif %}
+</div>
+{% endblock %}

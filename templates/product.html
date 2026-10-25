@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}{{ product['name'] }} - {{ site_name }}{% endblock %}
+{% block meta_description %}{{ product['meta_description'] or product['description'][:150] }}{% endblock %}
+{% block head_extra %}
+{% set product_schema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": product['name'],
+  "description": product['meta_description'] or product['description'][:300],
+  "sku": product['variants'][0]['sku'] if product['variants'] else '',
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "INR",
+    "price": "%.2f"|format(product['price_cents'] / 100),
+    "availability": "https://schema.org/InStock" if product['is_available'] else "https://schema.org/OutOfStock",
+    "url": request.url
+  }
+} %}
+{% if rating['count'] %}
+  {% set _ = product_schema.update({"aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": rating['average'],
+    "reviewCount": rating['count']
+  }}) %}
+{% endif %}
+<script type="application/ld+json">
+{{ product_schema | tojson }}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="section section--tight">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <a href="{{ url_for('storefront.shop', category=product['category']) }}">{{ category_labels.get(product['category'], product['category']) }}</a>
+      <span>/</span>
+      <span>{{ product['name'] }}</span>
+    </nav>
+
+    <div class="pdp">
+      {#- Gallery -#}
+      <div class="pdp__gallery">
+        <div class="pdp__main">
+          {% if product['images'] %}
+            <img src="{{ url_for('static', filename='img/products/' ~ product['images'][0]['filename']) }}"
+                 alt="{{ product['images'][0]['alt_text'] or product['name'] }}"
+                 data-gallery-main width="682" height="875">
+          {% else %}
+            <div class="empty" style="height:100%"><p>Image coming soon</p></div>
+          {% endif %}
+        </div>
+
+        {% if product['images']|length > 1 %}
+          <div class="pdp__thumbs">
+            {% for image in product['images'] %}
+              <button type="button" class="pdp__thumb {% if loop.first %}is-active{% endif %}"
+                      data-gallery-thumb data-src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+                      aria-label="View image {{ loop.index }}">
+                <img src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+                     alt="{{ image['alt_text'] or product['name'] }}" loading="lazy">
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      {#- Info -#}
+      <div class="pdp__info">
+        <div>
+          <span class="card__cat">{{ category_labels.get(product['category'], product['category']) }}</span>
+          <h1 class="display" style="font-size:clamp(28px,5vw,46px);margin-top:8px">{{ product['name'] }}</h1>
+        </div>
+
+        <div class="pdp__price">
+          <b data-price-label>&#8377;{{ product['price_from_display'] if product['has_size_prices'] else product['price_display'] }}</b>
+          {% if product['has_size_prices'] %}<span class="card__from">onwards</span>{% endif %}
+          {% if product['compare_at_cents'] > product['price_cents'] %}
+            <s>&#8377;{{ product['compare_at_display'] }}</s>
+            <em>Save &#8377;{{ money(product['compare_at_cents'] - product['price_cents']) }}</em>
+          {% endif %}
+        </div>
+
+        {% if rating['count'] %}
+          <p class="card__note" style="margin-top:-6px">
+            <strong>★ {{ rating['average'] }}</strong> from {{ rating['count'] }} review{{ '' if rating['count'] == 1 else 's' }}
+            &middot; <a href="#reviews">Read reviews</a>
+          </p>
+        {% endif %}
+
+        {% if product['description'] %}
+          <p class="pdp__desc">{{ product['description'] }}</p>
+        {% endif %}
+
+        <div class="pdp__buy" data-size-group>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+              <span class="eyebrow">Select size</span>
+              {% if show_size_guide %}
+                <a href="{{ url_for('storefront.size_guide') }}" style="font-size:12px">Size guide</a>
+              {% endif %}
+            </div>
+
+            <div class="sizes sizes--lg" role="group" aria-label="Choose a size">
+              {% for size in sizes %}
+                {% set entry = availability_by_size.get(size) %}
+                <button type="button" class="size-pill" data-size="{{ size }}"
+                        data-price="{{ entry['price_cents'] if entry else product['price_cents'] }}"
+                        data-price-display="{{ entry['price_display'] if entry else product['price_display'] }}"
+                        {% if not entry or not entry['available'] %}disabled{% endif %}>
+                  {{ size }}{% if product['has_size_prices'] and entry %} &middot; &#8377;{{ entry['price_display'] }}{% endif %}
+                </button>
+              {% endfor %}
+            </div>
+            <p class="size-error" role="alert"></p>
+          </div>
+
+          <button type="button" class="btn btn--primary btn--block"
+                  data-add-to-cart data-product-id="{{ product['id'] }}"
+                  {% if not product['is_available'] %}disabled{% endif %}>
+            {% if not product['is_available'] %}Unavailable{% else %}Add to cart - &#8377;<span data-add-price>{{ product['price_from_display'] if product['has_size_prices'] else product['price_display'] }}</span>{% endif %}
+          </button>
+
+          <button type="button" class="btn btn--ghost btn--block" data-wishlist-toggle
+                  data-product-id="{{ product['id'] }}"
+                  style="margin-top:8px"{% if wishlisted %} data-saved="1"{% endif %}>
+            {% if wishlisted %}♥ Saved{% else %}♡ Save to wishlist{% endif %}
+          </button>
+
+          <p class="card__note">
+            {% if product['stock_mode'] == 'made_to_order' %}
+              Printed and shipped in 3 to 5 working days
+            {% else %}
+              {{ product['in_stock_total'] }} units ready to ship
+            {% endif %}
+          </p>
+        </div>
+
+        {#- Specs -#}
+        <div class="spec">
+          <div class="spec__row"><span>Category</span><b>{{ category_labels.get(product['category'], product['category']) }}</b></div>
+          <div class="spec__row"><span>Fit</span><b>Regular, unisex</b></div>
+          <div class="spec__row"><span>Fabric</span><b>240 GSM combed cotton</b></div>
+          <div class="spec__row"><span>Print</span><b>DTG, front and back</b></div>
+          <div class="spec__row"><span>Availability</span><b>{{ 'Made to order' if product['stock_mode'] == 'made_to_order' else 'In stock' }}</b></div>
+        </div>
+
+        {#- Accordion -#}
+        <div class="accordion">
+          <details open>
+            <summary>Description</summary>
+            <div class="accordion__body">{{ product['description'] or 'Graphic tee, printed to order.' }}</div>
+          </details>
+          <details>
+            <summary>Shipping &amp; returns</summary>
+            <div class="accordion__body">
+              Shipping is &#8377;{{ shipping_fee }} flat, and free on orders over
+              &#8377;{{ free_shipping_threshold }}. Tees are printed after you order,
+              so please allow 3 to 5 working days before dispatch. Returns are
+              accepted within 7 days of delivery if the tee is unworn and tagged.
+            </div>
+          </details>
+          <details id="sizing">
+            <summary>Size guide</summary>
+            <div class="accordion__body">
+              XS 38-40 in chest, S 40-42 in, M 42-44 in, L 44-46 in,
+              XL 46-48 in, 2XL 48-50 in. Our tees are unisex and pre-shrunk.
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section--paper">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">More like this</span>
+        <h2 class="display">You might also like</h2>
+      </div>
+    </div>
+    <div class="product-grid">
+      {% for product in related %}
+        {% include "partials/product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section" id="reviews">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">Reviews</span>
+        <h2 class="display">What customers say</h2>
+        {% if rating['count'] %}
+          <p class="card__note">★ {{ rating['average'] }} average from {{ rating['count'] }} review{{ '' if rating['count'] == 1 else 's' }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="checkout-grid" style="align-items:start">
+      <div class="cart-panel">
+        {% if product_reviews %}
+          {% for review in product_reviews %}
+            <article style="padding:14px 0;border-bottom:1px solid #eee">
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <strong>{{ review['name'] }}</strong>
+                <span aria-label="{{ review['rating'] }} out of 5">{% for _ in range(review['rating']) %}★{% endfor %}{% for _ in range(5 - review['rating']) %}☆{% endfor %}</span>
+              </div>
+              {% if review['title'] %}<p style="margin:6px 0 2px"><b>{{ review['title'] }}</b></p>{% endif %}
+              <p style="margin:4px 0 0">{{ review['body'] }}</p>
+              <p class="card__note" style="margin-top:4px">{{ review['created_at'][:10] }}{% if review['order_id'] %} · verified purchase{% endif %}</p>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p class="card__note">No reviews yet. Be the first to share your thoughts.</p>
+        {% endif %}
+      </div>
+
+      <div class="cart-panel">
+        <h3 class="cart-panel__title">Write a review</h3>
+        <form method="post" action="{{ url_for('storefront.submit_review', slug=product['slug']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="review-name">Your name</label>
+            <input class="input" id="review-name" name="name" required minlength="2" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="review-rating">Rating</label>
+            <select class="input" id="review-rating" name="rating">
+              <option value="5">★★★★★ Excellent</option>
+              <option value="4">★★★★☆ Good</option>
+              <option value="3">★★★☆☆ Average</option>
+              <option value="2">★★☆☆☆ Poor</option>
+              <option value="1">★☆☆☆☆ Bad</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="review-title">Title (optional)</label>
+            <input class="input" id="review-title" name="title" maxlength="120">
+          </div>
+          <div class="field">
+            <label for="review-body">Your review</label>
+            <textarea class="textarea" id="review-body" name="body" required minlength="5" maxlength="1200"></textarea>
+          </div>
+          <div class="field">
+            <label for="review-order">Order number (optional, for verified badge)</label>
+            <input class="input" id="review-order" name="order_number" maxlength="40">
+          </div>
+          <div class="field">
+            <label for="review-phone">Phone used on the order</label>
+            <input class="input" id="review-phone" name="phone" maxlength="15" inputmode="numeric">
+          </div>
+          <button class="btn btn--primary btn--block" type="submit">Submit review</button>
+          <p class="card__note">Reviews are checked before they appear on the site.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

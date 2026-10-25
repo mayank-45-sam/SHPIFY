@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ code or 404 }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <div class="wrap">
+    <div class="error-page__code">{{ code or 404 }}</div>
+    <h1 class="display" style="margin-top:8px">
+      {% if code == 404 %}This page walked off{% elif code == 500 %}Something broke{% else %}That did not work{% endif %}
+    </h1>
+    <p class="lede" style="margin:14px auto 22px">
+      {{ message or "We could not find that page." }}
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn--primary" href="{{ url_for('storefront.shop') }}">Shop the collection</a>
+      <a class="btn btn--ghost" href="{{ url_for('storefront.home') }}">Back home</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

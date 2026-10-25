@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Contact - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <span>Contact</span>
+    </nav>
+    <h1 class="display">Talk to us</h1>
+    <p>Questions about a size, an order or a design idea - we answer every message.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="checkout-layout">
+      {#- Form -#}
+      <div class="cart-panel">
+        <h2 class="cart-panel__title">Send a message</h2>
+        <form method="post" action="{{ url_for('storefront.contact') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-grid">
+            <div class="field">
+              <label for="cname">Your name</label>
+              <input class="input" type="text" id="cname" name="name" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="cphone">Mobile number</label>
+              <input class="input" type="tel" id="cphone" name="phone" inputmode="numeric"
+                     autocomplete="tel-national" data-phone-input required>
+            </div>
+            <div class="field span-2">
+              <label for="cemail">Email</label>
+              <input class="input" type="email" id="cemail" name="email" autocomplete="email" required>
+            </div>
+            <div class="field span-2">
+              <label for="cmessage">Message</label>
+              <textarea class="textarea" id="cmessage" name="message"
+                        placeholder="Tell us what you need" required></textarea>
+            </div>
+          </div>
+          <button class="btn btn--primary btn--block" type="submit">Send message</button>
+        </form>
+      </div>
+
+      {#- Details -#}
+      <aside class="cart-panel">
+        <h2 class="cart-panel__title">Studio</h2>
+        <dl class="kv">
+          <dt>Email</dt><dd><a href="mailto:{{ site_email }}">{{ site_email }}</a></dd>
+          <dt>Phone</dt><dd><a href="tel:{{ site_phone | replace(' ', '') }}">{{ site_phone }}</a></dd>
+          <dt>Address</dt><dd>{{ site_address }}</dd>
+          <dt>Hours</dt><dd>Mon to Sat, 10 AM to 7 PM IST</dd>
+        </dl>
+
+        <div class="notice notice--info" style="margin-top:18px">
+          <strong>Existing order?</strong>
+          Use the <a href="{{ url_for('storefront.track_order') }}">order tracking page</a>
+          with your order number for the fastest answer.
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section section--paper" id="shipping">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head__text">
+        <span class="eyebrow">The small print</span>
+        <h2 class="display">Shipping, returns &amp; sizing</h2>
+      </div>
+    </div>
+
+    <div class="cat-grid">
+      <div class="cat-card" style="background:var(--ink)" id="shipping-card">
+        <h3>Shipping</h3>
+        <p>
+          Flat &#8377;{{ shipping_fee }} anywhere in India, free over
+          &#8377;{{ free_shipping_threshold }}. Tees are printed after you order,
+          so allow 3 to 5 working days before dispatch, then 2 to 4 days on the road.
+        </p>
+      </div>
+      <div class="cat-card" style="background:var(--ink)">
+        <h3>Returns</h3>
+        <p>
+          Unworn and tagged tees can be returned within 7 days of delivery.
+          Write to us and we will arrange a pickup.
+        </p>
+      </div>
+      <div class="cat-card" style="background:var(--ink)" id="sizing">
+        <h3>Sizing</h3>
+        <p>
+          Unisex, regular fit, pre-shrunk. XS 38-40 in chest, S 40-42 in, M 42-44 in,
+          L 44-46 in, XL 46-48 in, 2XL 48-50 in.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

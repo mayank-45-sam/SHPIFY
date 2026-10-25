@@ -1,0 +1,20 @@
+.env
+instance/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.log
+.venv/
+venv/
+*.db
+.DS_Store
+Thumbs.db
+
+# Runtime uploads from customers
+static/img/custom/custom_*
+
+# Loose source/reference images in the project root
+/*.jpg
+/*.jpeg
+/*.png
+/*.webp

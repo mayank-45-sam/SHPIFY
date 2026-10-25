@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Track your order - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <span>Track order</span>
+    </nav>
+    <h1 class="display">Track your order</h1>
+    <p>Enter your order number and the mobile number you used at checkout.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap wrap--narrow">
+    <form class="cart-panel" method="get" action="{{ url_for('storefront.track_order') }}">
+      <h2 class="cart-panel__title">Find your order</h2>
+
+      {% if error %}
+        <div class="notice notice--error" style="margin-bottom:16px">{{ error }}</div>
+      {% endif %}
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="order_number">Order number</label>
+          <input class="input" type="text" id="order_number" name="order_number"
+                 placeholder="PT-260921-4K7QX" value="{{ request.args.get('order_number', '') }}"
+                 autocomplete="off" required>
+        </div>
+        <div class="field">
+          <label for="phone">Mobile number</label>
+          <input class="input" type="tel" id="phone" name="phone" inputmode="numeric"
+                 placeholder="10 digit mobile" value="{{ request.args.get('phone', '') }}"
+                 autocomplete="tel-national" data-phone-input required>
+        </div>
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit">Track order</button>
+      <p class="summary__note" style="margin-top:10px">
+        Your order number is on the confirmation screen and in your email. We never
+        show an order without the matching phone number.
+      </p>
+    </form>
+
+    {% if order %}
+      <div class="confirm-card" style="margin-top:20px">
+        <div class="confirm-head">
+          <div>
+            <span class="eyebrow">Order {{ order['order_number'] }}</span>
+            <h1 class="display" style="margin-top:10px;font-size:clamp(24px,4vw,34px)">{{ order['status_label'] }}</h1>
+          </div>
+          <span class="badge {% if order['payment_status'] == 'paid' %}badge--live{% elif order['payment_status'] == 'test_mode' %}badge--test{% endif %}">
+            {{ order['payment_status'] }}
+          </span>
+        </div>
+
+        {% if order['tracking_number'] %}
+          <div class="notice notice--info" style="margin-bottom:18px">
+            <strong>{{ order['carrier'] or 'Tracking' }} {{ order['tracking_number'] }}</strong>
+            Your parcel is on the move.
+          </div>
+        {% endif %}
+
+        <dl class="kv" style="margin-bottom:18px">
+          <dt>Placed by</dt><dd>{{ order['customer_name'] }}</dd>
+          <dt>Delivering to</dt>
+          <dd>
+            {{ order['address_line1'] }}{% if order['address_line2'] %}, {{ order['address_line2'] }}{% endif %},
+            {{ order['city'] }}, {{ order['state'] }} - {{ order['pincode'] }}
+          </dd>
+          <dt>Ordered on</dt><dd>{{ order['created_at'][:10] }}</dd>
+        </dl>
+
+        <div class="summary-lines">
+          {% for item in order['items'] %}
+            <div class="summary-line">
+              <div class="summary-line__media">
+                {% if item['image_url'] %}
+                  <img src="{{ item['image_url'] }}"
+                       alt="{{ item['product_name'] }}" loading="lazy">
+                {% endif %}
+              </div>
+              <div>
+                <div class="summary-line__name">{{ item['product_name'] }}</div>
+                <div class="summary-line__meta">Size {{ item['size'] }} &times; {{ item['quantity'] }}</div>
+                {% if item['custom_front'] or item['custom_back'] %}
+                  <div class="summary-line__meta">Custom front &amp; back print</div>
+                {% endif %}
+              </div>
+              <div class="summary-line__price">&#8377;{{ money(item['unit_price_cents'] * item['quantity']) }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="summary" style="margin-bottom:18px">
+          <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(order['total_cents']) }}</span></div>
+        </div>
+
+        {% if order['events'] %}
+          <h2 class="cart-panel__title">Progress</h2>
+          <ul class="timeline">
+            {% for event in order['events'] %}
+              <li class="timeline__item {% if loop.first %}timeline__item--current{% endif %}">
+                <span class="timeline__dot">
+                  <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                </span>
+                <div>
+                  <div class="timeline__title">{{ event['message'] or event['status'] }}</div>
+                  <div class="timeline__meta">{{ event['created_at'][:16].replace('T', ' ') }}</div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <div style="margin-top:18px">
+          <a class="btn btn--ghost" href="{{ url_for('storefront.contact') }}">Need help with this order?</a>
+        </div>
+      </div>
+    {% elif searched %}
+      <p class="summary__note" style="margin-top:16px">
+        Could not find that order. Double check the order number and the phone number,
+        or <a href="{{ url_for('storefront.contact') }}">contact us</a> and we will sort it out.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

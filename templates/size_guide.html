@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Size Guide - {{ site_name }}{% endblock %}
+{% block meta_description %}Find your fit with the {{ site_name }} unisex tee size chart.{% endblock %}
+
+{% block content %}
+<section class="section section--tight">
+  <div class="wrap wrap--narrow">
+    <span class="eyebrow">Fit &amp; measurements</span>
+    <h1 class="display">Size guide</h1>
+    <p class="section-head__note">
+      Our tees are unisex and pre-shrunk. Measure a tee you already like, lay it flat,
+      and compare the chest width. If you are between sizes, go up for a relaxed fit.
+    </p>
+
+    <div class="cart-panel" style="margin-top:24px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;text-align:left">
+        <thead>
+          <tr>
+            <th style="padding:10px;border-bottom:1px solid #ddd">Size</th>
+            <th style="padding:10px;border-bottom:1px solid #ddd">Chest (in)</th>
+            <th style="padding:10px;border-bottom:1px solid #ddd">Length (in)</th>
+            <th style="padding:10px;border-bottom:1px solid #ddd">Shoulder (in)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:10px;border-bottom:1px solid #eee">XS</td><td style="padding:10px;border-bottom:1px solid #eee">38-40</td><td style="padding:10px;border-bottom:1px solid #eee">26.5</td><td style="padding:10px;border-bottom:1px solid #eee">16.5</td></tr>
+          <tr><td style="padding:10px;border-bottom:1px solid #eee">S</td><td style="padding:10px;border-bottom:1px solid #eee">40-42</td><td style="padding:10px;border-bottom:1px solid #eee">27.5</td><td style="padding:10px;border-bottom:1px solid #eee">17.5</td></tr>
+          <tr><td style="padding:10px;border-bottom:1px solid #eee">M</td><td style="padding:10px;border-bottom:1px solid #eee">42-44</td><td style="padding:10px;border-bottom:1px solid #eee">28.5</td><td style="padding:10px;border-bottom:1px solid #eee">18.5</td></tr>
+          <tr><td style="padding:10px;border-bottom:1px solid #eee">L</td><td style="padding:10px;border-bottom:1px solid #eee">44-46</td><td style="padding:10px;border-bottom:1px solid #eee">29.5</td><td style="padding:10px;border-bottom:1px solid #eee">19.5</td></tr>
+          <tr><td style="padding:10px;border-bottom:1px solid #eee">XL</td><td style="padding:10px;border-bottom:1px solid #eee">46-48</td><td style="padding:10px;border-bottom:1px solid #eee">30.5</td><td style="padding:10px;border-bottom:1px solid #eee">20.5</td></tr>
+          <tr><td style="padding:10px">2XL</td><td style="padding:10px">48-50</td><td style="padding:10px">31.5</td><td style="padding:10px">21.5</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="summary__note" style="margin-top:16px">
+      Still unsure? Message us on WhatsApp or email {{ site_email }} and we will help you pick.
+    </p>
+    <a class="btn btn--primary" href="{{ url_for('storefront.shop') }}">Shop all tees</a>
+  </div>
+</section>
+{% endblock %}

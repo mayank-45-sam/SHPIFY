@@ -1,0 +1,69 @@
+{#- One product card. Expects: product. Uses the `availability` helper. -#}
+{% set info = availability(product) %}
+{% set sold_out = not product['is_available'] %}
+{% set card_sizes = product['variants']|map(attribute='size')|list %}
+<article class="card">
+  <a class="card__media" href="{{ url_for('storefront.product_detail', slug=product['slug']) }}"
+     aria-label="{{ product['name'] }}">
+    {% if product['primary_image'] %}
+      <img src="{{ url_for('static', filename='img/products/' ~ product['primary_image']) }}"
+           alt="{{ product['name'] }}" loading="lazy" width="682" height="875">
+    {% else %}
+      <div class="empty" style="aspect-ratio:4/5;background:var(--bone-2)">
+        <p style="font-size:12px">Image coming soon</p>
+      </div>
+    {% endif %}
+    <div class="card__tags">
+      {% if product['compare_at_cents'] > product['price_cents'] %}
+        <span class="tag tag--acid">Save {{ money(product['compare_at_cents'] - product['price_cents']) }}</span>
+      {% endif %}
+      {% if product['needs_review'] %}
+        <span class="tag tag--warn">Artwork pending</span>
+      {% endif %}
+      {% if product['stock_mode'] == 'tracked' and product['in_stock_total'] <= 0 %}
+        <span class="tag tag--muted">Sold out</span>
+      {% endif %}
+    </div>
+  </a>
+
+  <div class="card__body">
+    <span class="card__cat">{{ category_labels.get(product['category'], product['category']) }}</span>
+    <a class="card__name" href="{{ url_for('storefront.product_detail', slug=product['slug']) }}">
+      {{- product['name'] -}}
+    </a>
+
+    <div class="card__price">
+      {% if product['has_size_prices'] %}<span class="card__from">From</span> {% endif %}<b>&#8377;{{ product['price_from_display'] if product['has_size_prices'] else product['price_display'] }}</b>
+      {% if product['compare_at_cents'] > product['price_cents'] %}
+        <s>&#8377;{{ product['compare_at_display'] }}</s>
+      {% endif %}
+    </div>
+
+    {% if product['stock_mode'] == 'made_to_order' %}
+      <span class="card__note">Made to order</span>
+    {% elif product['in_stock_total'] > 0 %}
+      <span class="card__note">{{ product['in_stock_total'] }} in stock</span>
+    {% else %}
+      <span class="card__note card__note--out">Sold out</span>
+    {% endif %}
+
+    <div class="card__foot" data-size-group>
+      <div class="sizes" role="group" aria-label="Choose a size for {{ product['name'] }}">
+        {% for size in card_sizes %}
+          {% set entry = info.get(size) %}
+          <button type="button" class="size-pill" data-size="{{ size }}"
+                  {% if not entry or not entry['available'] %}disabled{% endif %}
+                  aria-label="Size {{ size }}{% if entry and not entry['available'] %} (unavailable){% endif %}">
+            {{ size }}
+          </button>
+        {% endfor %}
+      </div>
+      <p class="size-error" role="alert"></p>
+      <button type="button" class="btn btn--dark btn--sm btn--block"
+              data-add-to-cart data-product-id="{{ product['id'] }}"
+              {% if sold_out %}disabled{% endif %}>
+        {% if sold_out %}Sold out{% else %}Add to cart{% endif %}
+      </button>
+    </div>
+  </div>
+</article>

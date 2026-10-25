@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Fulfilment</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Orders</h1>
+  </div>
+</div>
+
+<form class="form-grid" method="get" action="{{ url_for('admin.orders_list') }}" style="margin-bottom:16px;align-items:end">
+  <div class="field" style="margin-bottom:0">
+    <label for="q">Search</label>
+    <input class="input" type="search" id="q" name="q" value="{{ search }}"
+           placeholder="Order number, name, phone or email">
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label for="status">Status</label>
+    <select class="select" id="status" name="status">
+      <option value="">All statuses</option>
+      {% for value in statuses %}
+        <option value="{{ value }}" {% if active_status == value %}selected{% endif %}>
+          {{ status_labels[value] }} ({{ summary.get(value, 0) }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <button class="btn btn--dark" type="submit">Apply</button>
+  </div>
+</form>
+
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+  <a class="btn btn--ghost btn--sm"
+     href="{{ url_for('admin.orders_export', status=active_status, q=search) }}">Export CSV</a>
+  <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.abandoned_list') }}">Abandoned carts</a>
+</div>
+
+{% if orders %}
+  <form method="post" action="{{ url_for('admin.orders_bulk') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="table-scroll">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th><span class="sr-only">Select</span></th>
+            <th>Order</th><th>Date</th><th>Customer</th><th>Phone</th>
+            <th>Total</th><th>Payment</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td><input type="checkbox" name="order_ids" value="{{ order['id'] }}" aria-label="Select {{ order['order_number'] }}"></td>
+              <td><a href="{{ url_for('admin.order_detail', order_id=order['id']) }}"><strong>{{ order['order_number'] }}</strong></a></td>
+              <td style="white-space:nowrap">{{ order['created_at'][:10] }}</td>
+              <td>{{ order['customer_name'] }}</td>
+              <td>{{ order['phone'] }}</td>
+              <td>&#8377;{{ money(order['total_cents']) }}</td>
+              <td>
+                <span class="badge {% if order['payment_status'] == 'paid' %}badge--live{% elif order['payment_status'] == 'submitted' %}badge--review{% elif order['payment_status'] == 'test_mode' %}badge--test{% endif %}">
+                  {{ order['payment_label'] }}
+                </span>
+              </td>
+              <td><span class="badge">{{ order['status_label'] }}</span></td>
+              <td style="text-align:right">
+                <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.order_detail', order_id=order['id']) }}">Open</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <label for="bulk-status" class="summary__note">With selected orders:</label>
+      <select class="input" id="bulk-status" name="status" style="min-width:160px">
+        {% for value in statuses %}
+          <option value="{{ value }}">{{ status_labels[value] }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn--dark btn--sm" type="submit">Update status</button>
+    </div>
+  </form>
+{% else %}
+  <div class="empty">
+    <div class="empty__icon">
+      <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+    </div>
+    <h3>No orders found</h3>
+    <p>Orders show up here the moment a customer checks out.</p>
+  </div>
+{% endif %}
+{% endblock %}

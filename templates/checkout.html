@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Checkout - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.shop') }}">Shop</a>
+      <span>/</span>
+      <a href="{{ url_for('storefront.cart_page') }}">Cart</a>
+      <span>/</span>
+      <span>Checkout</span>
+    </nav>
+    <h1 class="display">Checkout</h1>
+    <p>Two minutes and your tee is on the press.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    {% if errors %}
+      <ul class="error-list" role="alert">
+        {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if not payment_configured %}
+      <div class="notice notice--warn" style="margin-bottom:18px">
+        <strong>Test mode - no real payment will be taken.</strong>
+        No payment method is set up on this server{% if missing_payment %}: {{ missing_payment | join(', ') }} is missing{% endif %}.
+        Your order will be saved exactly as a real one, but it will be marked as a test order
+        and no money will move.
+      </div>
+    {% endif %}
+
+    <form class="checkout-layout" method="post" action="{{ url_for('checkout.checkout') }}" data-checkout-form novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {#- Details -#}
+      <div class="cart-panel">
+        <h2 class="cart-panel__title">Delivery details</h2>
+
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="customer_name">Full name</label>
+            <input class="input" type="text" id="customer_name" name="customer_name"
+                   value="{{ customer.get('customer_name', '') }}" autocomplete="name" required>
+          </div>
+
+          <div class="field">
+            <label for="phone">Mobile number</label>
+            <input class="input" type="tel" id="phone" name="phone" inputmode="numeric"
+                   placeholder="10 digit mobile" value="{{ customer.get('phone', '') }}"
+                   autocomplete="tel-national" data-phone-input required>
+            <span class="hint">We use this for delivery updates only.</span>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input class="input" type="email" id="email" name="email"
+                   value="{{ customer.get('email', '') }}" autocomplete="email" required>
+          </div>
+
+          <div class="field span-2">
+            <label for="address_line1">Address</label>
+            <input class="input" type="text" id="address_line1" name="address_line1"
+                   value="{{ customer.get('address_line1', '') }}" autocomplete="address-line1"
+                   placeholder="Flat, building, street" required>
+          </div>
+
+          <div class="field span-2">
+            <label for="address_line2">Landmark (optional)</label>
+            <input class="input" type="text" id="address_line2" name="address_line2"
+                   value="{{ customer.get('address_line2', '') }}" autocomplete="address-line2"
+                   placeholder="Near something everyone knows">
+          </div>
+
+          <div class="field">
+            <label for="city">City</label>
+            <input class="input" type="text" id="city" name="city"
+                   value="{{ customer.get('city', '') }}" autocomplete="address-level2" required>
+          </div>
+
+          <div class="field">
+            <label for="state">State</label>
+            <input class="input" type="text" id="state" name="state"
+                   value="{{ customer.get('state', '') }}" autocomplete="address-level1" required>
+          </div>
+
+          <div class="field">
+            <label for="pincode">PIN code</label>
+            <input class="input" type="text" id="pincode" name="pincode" inputmode="numeric"
+                   maxlength="6" value="{{ customer.get('pincode', '') }}"
+                   autocomplete="postal-code" required data-pincode-input>
+            <span class="hint" data-pincode-status></span>
+          </div>
+
+          <div class="field span-2">
+            <label for="notes">Order notes (optional)</label>
+            <textarea class="textarea" id="notes" name="notes"
+                      placeholder="Anything the printer or courier should know"></textarea>
+          </div>
+        </div>
+
+        {#- Payment method -#}
+        {% if payment_methods %}
+          <fieldset class="pay-choice" style="border:0;padding:0;margin:0 0 18px">
+            <legend class="cart-panel__title" style="padding:0">How do you want to pay?</legend>
+            {% for method in payment_methods %}
+              <label class="pay-choice__option">
+                <input type="radio" name="payment_method" value="{{ method['id'] }}"
+                       {% if chosen_method == method['id'] %}checked{% endif %}>
+                <span class="pay-choice__label">{{ method['label'] }}</span>
+                <span class="pay-choice__detail">{{ method['detail'] }}</span>
+              </label>
+            {% endfor %}
+          </fieldset>
+        {% endif %}
+
+        {#- Coupon -#}
+        <div class="field" style="margin-bottom:12px">
+          <label for="coupon_code">Coupon code (optional)</label>
+          <div style="display:flex;gap:8px">
+            <input class="input" type="text" id="coupon_code" name="coupon_code"
+                   value="{{ coupon_code }}" placeholder="e.g. FIRST10" style="flex:1">
+            <button class="btn btn--ghost" type="submit"
+                    formaction="{{ url_for('checkout.apply_coupon') }}" formmethod="post"
+                    formnovalidate>Apply</button>
+          </div>
+          {% if coupon_applied %}
+            <span class="hint" style="color:#157347">Coupon {{ coupon_code }} applied.</span>
+          {% elif coupon_message %}
+            <span class="hint" style="color:#b02a37">{{ coupon_message }}</span>
+          {% endif %}
+        </div>
+
+        {% if otp_required %}
+          <div class="field" style="margin-bottom:12px" data-otp-box>
+            <label for="otp_code">Mobile OTP (for cash on delivery)</label>
+            <div style="display:flex;gap:8px">
+              <input class="input" type="text" id="otp_code" name="otp_code" inputmode="numeric"
+                     maxlength="6" placeholder="6-digit code" style="flex:1">
+              <button class="btn btn--ghost" type="button" data-otp-send
+                      data-url="{{ url_for('checkout.otp_send') }}">Send OTP</button>
+            </div>
+            <span class="hint" data-otp-status>We text a code to the mobile number above.</span>
+          </div>
+        {% endif %}
+
+        {% if cod_fee %}
+          <p class="summary__note">A cash-on-delivery handling fee of &#8377;{{ cod_fee }} applies to COD orders.</p>
+        {% endif %}
+
+        <button class="btn btn--primary btn--block" type="submit" style="margin-top:6px">
+          {% if payment_configured %}
+            Place order - &#8377;{{ money(totals['total_cents']) }}
+          {% else %}
+            Place test order - &#8377;{{ money(totals['total_cents']) }}
+          {% endif %}
+        </button>
+        <p class="summary__note" style="margin-top:10px">
+          By placing the order you agree to our returns policy. Nothing is charged
+          until the payment step is completed.
+        </p>
+      </div>
+
+      {#- Summary -#}
+      <aside class="cart-panel checkout-summary">
+        <h2 class="cart-panel__title">Your order</h2>
+
+        <div class="summary-lines">
+          {% for line in lines %}
+            <div class="summary-line">
+              <div class="summary-line__media">
+                {% if line['image'] %}
+                  <img src="{{ url_for('static', filename='img/products/' ~ line['image']) }}"
+                       alt="{{ line['name'] }}" loading="lazy">
+                {% endif %}
+              </div>
+              <div>
+                <div class="summary-line__name">{{ line['name'] }}</div>
+                <div class="summary-line__meta">Size {{ line['size'] }} &times; {{ line['quantity'] }}</div>
+              </div>
+              <div class="summary-line__price">&#8377;{{ line['line_total_display'] }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="summary">
+          <div class="summary__row"><span>Subtotal</span><span>&#8377;{{ money(totals['subtotal_cents']) }}</span></div>
+          <div class="summary__row">
+            <span>Shipping</span>
+            <span>{% if totals['shipping_cents'] %}&#8377;{{ money(totals['shipping_cents']) }}{% else %}Free{% endif %}</span>
+          </div>
+          {% if totals.get('discount_cents') %}
+            <div class="summary__row" style="color:#157347">
+              <span>Coupon discount</span><span>-&#8377;{{ money(totals['discount_cents']) }}</span>
+            </div>
+          {% endif %}
+          {% if totals.get('cod_fee_cents') %}
+            <div class="summary__row">
+              <span>COD fee</span><span>&#8377;{{ money(totals['cod_fee_cents']) }}</span>
+            </div>
+          {% endif %}
+          <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(totals['total_cents']) }}</span></div>
+        </div>
+        <p class="summary__note">{{ totals['shipping_message'] }}</p>
+      </aside>
+    </form>
+  </div>
+</section>
+{% endblock %}

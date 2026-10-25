@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Configuration</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Settings</h1>
+  </div>
+</div>
+
+<div class="admin-grid admin-grid--2">
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Store</h2></div>
+    <dl class="kv">
+      <dt>Store name</dt><dd>{{ store_name }}</dd>
+      <dt>Default tee price</dt><dd>&#8377;{{ default_price }}</dd>
+      <dt>Shipping fee</dt><dd>&#8377;{{ shipping_fee }}</dd>
+      <dt>Free shipping over</dt><dd>&#8377;{{ free_shipping_threshold }}</dd>
+    </dl>
+    <p class="summary__note" style="margin-top:12px">
+      These come from the environment file. Edit <code>.env</code> and restart the
+      server to change them.
+    </p>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Payments</h2></div>
+    <div class="notice notice--{{ 'ok' if payment_status == 'live' else 'warn' }}">
+      <strong>{{ 'Live mode' if payment_status == 'live' else 'Test mode' }}</strong>
+      {% if payment_status == 'live' %}
+        {% if upi['id'] %}
+          UPI is live. Customers scan the QR code and pay the order total. You confirm
+          each payment in <em>Admin -> Orders</em> once it lands, so an order is never
+          marked paid on a customer's word alone.
+        {% endif %}
+        {% if payment_status == 'live' and razorpay_configured %}
+          Razorpay is also on: cards, netbanking and UPI are verified automatically
+          before an order is marked paid.
+        {% endif %}
+      {% else %}
+        No payment method is set up{% if missing_payment %}: {{ missing_payment | join(', ') }} is missing{% endif %}.
+        Orders are saved as test orders and no money can move. Add a UPI id and QR
+        code, or Razorpay keys, to <code>.env</code> and restart to take real payments.
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Print supplier</h2></div>
+    <div class="notice notice--{{ 'ok' if supplier_status['configured'] else 'warn' }}">
+      <strong>{{ supplier_status['name'] }}</strong>
+      {% if supplier_status['configured'] %}
+        Connected. The order payload is ready to send.
+      {% else %}
+        Not connected. {{ supplier_status['message'] }}
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin.supplier_check') }}" style="margin-top:12px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--ghost btn--sm" type="submit">Test the connection</button>
+    </form>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Storefront</h2></div>
+    <dl class="kv">
+      <dt>Public site</dt>
+      <dd><a href="{{ url_for('storefront.home') }}">{{ url_for('storefront.home', _external=True) }}</a></dd>
+      <dt>Shop</dt>
+      <dd><a href="{{ url_for('storefront.shop') }}">{{ url_for('storefront.shop', _external=True) }}</a></dd>
+      <dt>Sitemap</dt>
+      <dd><a href="{{ url_for('storefront.sitemap') }}">{{ url_for('storefront.sitemap', _external=True) }}</a></dd>
+      <dt>Health check</dt>
+      <dd><a href="{{ url_for('storefront.health') }}">{{ url_for('storefront.health', _external=True) }}</a></dd>
+    </dl>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-card__head"><h2 class="admin-card__title">Operations</h2></div>
+    <dl class="kv">
+      <dt>Cash on delivery</dt>
+      <dd>{{ 'Enabled' if cod_enabled else 'Disabled' }}{% if cod_fee %} · fee &#8377;{{ cod_fee }}{% endif %}</dd>
+      <dt>COD OTP</dt>
+      <dd>{{ 'Required' if otp_required else 'Not required' }}</dd>
+      <dt>Pincode rule</dt>
+      <dd>
+        {% if serviceable_pincodes %}
+          {{ serviceable_pincodes }}
+        {% else %}
+          All pincodes serviceable
+        {% endif %}
+      </dd>
+      <dt>GSTIN</dt>
+      <dd>{{ gstin or 'Not set' }}</dd>
+      <dt>Order emails</dt>
+      <dd>{{ 'Configured' if email_configured else 'Not configured (orders still work)' }}</dd>
+    </dl>
+    <p class="summary__note" style="margin-top:12px">
+      Change any of these in <code>.env</code> and restart the server.
+    </p>
+  </div>
+</div>
+{% endblock %}

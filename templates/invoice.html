@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice['invoice_number'] }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="wrap wrap--narrow">
+    <div class="confirm-card" id="invoice">
+      <div class="confirm-head">
+        <div>
+          <span class="eyebrow">Tax invoice</span>
+          <h1 class="display" style="margin-top:8px">{{ invoice['invoice_number'] }}</h1>
+        </div>
+        <span class="badge">{{ order['created_at'][:10] }}</span>
+      </div>
+
+      <div class="checkout-grid" style="align-items:start;margin-bottom:18px">
+        <div>
+          <h2 class="cart-panel__title">Sold by</h2>
+          <p>
+            <strong>{{ invoice['legal_name'] }}</strong><br>
+            {{ site_address }}<br>
+            {% if invoice['gstin'] %}GSTIN: {{ invoice['gstin'] }}<br>{% endif %}
+            {{ site_email }} · {{ site_phone }}
+          </p>
+        </div>
+        <div>
+          <h2 class="cart-panel__title">Billed to</h2>
+          <p>
+            <strong>{{ order['customer_name'] }}</strong><br>
+            {{ order['address_line1'] }}{% if order['address_line2'] %}, {{ order['address_line2'] }}{% endif %}<br>
+            {{ order['city'] }}, {{ order['state'] }} - {{ order['pincode'] }}<br>
+            {{ order['phone'] }}{% if order['email'] %} · {{ order['email'] }}{% endif %}
+          </p>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;text-align:left;margin-bottom:18px">
+        <thead>
+          <tr>
+            <th style="padding:8px;border-bottom:1px solid #ddd">Item</th>
+            <th style="padding:8px;border-bottom:1px solid #ddd">Size</th>
+            <th style="padding:8px;border-bottom:1px solid #ddd">Qty</th>
+            <th style="padding:8px;border-bottom:1px solid #ddd;text-align:right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order['items'] %}
+            <tr>
+              <td style="padding:8px;border-bottom:1px solid #eee">{{ item['product_name'] }}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee">{{ item['size'] }}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee">{{ item['quantity'] }}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">&#8377;{{ money(item['unit_price_cents'] * item['quantity']) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="summary" style="margin-bottom:18px">
+        <div class="summary__row"><span>Subtotal</span><span>&#8377;{{ money(order['subtotal_cents']) }}</span></div>
+        <div class="summary__row"><span>Shipping</span><span>&#8377;{{ money(order['shipping_cents']) }}</span></div>
+        {% if order['discount_cents'] %}
+          <div class="summary__row"><span>Discount{% if order['coupon_code'] %} ({{ order['coupon_code'] }}){% endif %}</span><span>-&#8377;{{ money(order['discount_cents']) }}</span></div>
+        {% endif %}
+        {% if order['cod_fee_cents'] %}
+          <div class="summary__row"><span>COD fee</span><span>&#8377;{{ money(order['cod_fee_cents']) }}</span></div>
+        {% endif %}
+        <div class="summary__row"><span>Taxable value</span><span>&#8377;{{ money(invoice['taxable_cents']) }}</span></div>
+        <div class="summary__row"><span>CGST @ {{ invoice['gst_percent'] / 2 }}%</span><span>&#8377;{{ money(invoice['cgst_cents']) }}</span></div>
+        <div class="summary__row"><span>SGST @ {{ invoice['gst_percent'] / 2 }}%</span><span>&#8377;{{ money(invoice['sgst_cents']) }}</span></div>
+        <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(invoice['total_cents']) }}</span></div>
+      </div>
+
+      <p class="summary__note">
+        Prices include GST. This is a computer-generated invoice and does not need a signature.
+        Payment method: {{ order['payment_method']|upper }} · Status: {{ order['payment_status'] }}.
+      </p>
+
+      <div style="display:flex;gap:10px;margin-top:18px" class="no-print">
+        <button class="btn btn--dark" type="button" onclick="window.print()">Print / Save as PDF</button>
+        <a class="btn btn--ghost" href="{{ url_for('checkout.order_confirmation', order_number=order['order_number']) }}">Back to order</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  @media print {
+    .site-header, .site-footer, .no-print, .flashes { display: none !important; }
+    body { background: #fff; }
+  }
+</style>
+{% endblock %}

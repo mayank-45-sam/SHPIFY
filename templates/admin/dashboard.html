@@ -1,0 +1,153 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Overview</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Dashboard</h1>
+  </div>
+  <a class="btn btn--primary btn--sm" href="{{ url_for('admin.product_new') }}">New product</a>
+</div>
+
+{% if payment_status != 'live' %}
+  <div class="notice notice--warn" style="margin-bottom:18px">
+    <strong>Payments are in test mode.</strong>
+    No payment method is set up{% if missing_payment %} ({{ missing_payment | join(', ') }} missing){% endif %}.
+    Orders are saved with the status <code>test_order</code> and no money is ever charged.
+  </div>
+{% endif %}
+
+{% if not supplier_status['configured'] %}
+  <div class="notice notice--warn" style="margin-bottom:18px">
+    <strong>The print supplier is not connected.</strong>
+    {{ supplier_status['message'] }}
+    You can still take orders and fulfil them by hand.
+  </div>
+{% endif %}
+
+{#- Stats -#}
+<div class="stat-grid" style="margin-bottom:22px">
+  <div class="stat">
+    <div class="stat__label">Products</div>
+    <div class="stat__value">{{ total_products }}</div>
+    <div class="stat__sub">{{ published_products }} published</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Orders</div>
+    <div class="stat__value">{{ order_summary.get('new', 0) + order_summary.get('confirmed', 0) }}</div>
+    <div class="stat__sub">new or confirmed</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Revenue</div>
+    <div class="stat__value">&#8377;{{ money(revenue_cents) }}</div>
+    <div class="stat__sub">paid and test orders</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Unpaid</div>
+    <div class="stat__value">&#8377;{{ money(unpaid_cents) }}</div>
+    <div class="stat__sub">awaiting payment</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Today</div>
+    <div class="stat__value">{{ today_orders }}</div>
+    <div class="stat__sub">&#8377;{{ money(today_revenue_cents) }} · {{ cod_count }} COD</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Reviews</div>
+    <div class="stat__value">{{ pending_reviews }}</div>
+    <div class="stat__sub">awaiting approval</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Returns</div>
+    <div class="stat__value">{{ open_returns }}</div>
+    <div class="stat__sub">open requests</div>
+  </div>
+  <div class="stat">
+    <div class="stat__label">Abandoned</div>
+    <div class="stat__value">{{ abandoned_count }}</div>
+    <div class="stat__sub">carts to recover</div>
+  </div>
+</div>
+
+<div class="admin-grid admin-grid--2">
+  {#- Needs attention -#}
+  <div class="admin-card">
+    <div class="admin-card__head">
+      <h2 class="admin-card__title">Needs attention</h2>
+    </div>
+
+    {% if needs_review %}
+      <p style="font-size:13px;font-weight:700;margin-bottom:8px">Artwork to confirm ({{ needs_review|length }})</p>
+      <ul style="display:grid;gap:8px;margin-bottom:16px">
+        {% for product in needs_review %}
+          <li style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13.5px">
+            <span>
+              <a href="{{ url_for('admin.product_edit', product_id=product['id']) }}">{{ product['name'] }}</a>
+              {% if product['review_note'] %}<br><span style="font-size:12px;color:var(--muted)">{{ product['review_note'] }}</span>{% endif %}
+            </span>
+            <span class="badge badge--review">review</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if no_image %}
+      <p style="font-size:13px;font-weight:700;margin-bottom:8px">No image attached ({{ no_image|length }})</p>
+      <ul style="display:grid;gap:8px;margin-bottom:16px">
+        {% for product in no_image %}
+          <li style="font-size:13.5px">
+            <a href="{{ url_for('admin.product_edit', product_id=product['id']) }}">{{ product['name'] }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if images_pending %}
+      <p style="font-size:13px;font-weight:700;margin-bottom:8px">Images on disk not attached ({{ images_pending|length }})</p>
+      <ul style="display:grid;gap:6px">
+        {% for image in images_pending %}
+          <li style="display:flex;gap:10px;align-items:center;font-size:13px">
+            <img src="{{ image['url'] }}" alt="" class="table-thumb" style="width:34px;height:42px">
+            <span>{{ image['filename'] }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if not needs_review and not no_image and not images_pending %}
+      <p class="summary__note">Nothing needs your attention right now.</p>
+    {% endif %}
+  </div>
+
+  {#- Recent orders -#}
+  <div class="admin-card">
+    <div class="admin-card__head">
+      <h2 class="admin-card__title">Recent orders</h2>
+      <a class="link-arrow" href="{{ url_for('admin.orders_list') }}">All orders</a>
+    </div>
+
+    {% if orders %}
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td><a href="{{ url_for('admin.order_detail', order_id=order['id']) }}">{{ order['order_number'] }}</a></td>
+                <td>{{ order['customer_name'] }}</td>
+                <td>&#8377;{{ money(order['total_cents']) }}</td>
+                <td><span class="badge">{{ order['status_label'] }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="summary__note">No orders yet. They will appear here the moment someone checks out.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

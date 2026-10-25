@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Reviews{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Customer feedback</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Reviews</h1>
+  </div>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+  <a class="btn btn--sm {% if not active_status %}btn--dark{% else %}btn--ghost{% endif %}" href="{{ url_for('admin.reviews_list') }}">All</a>
+  {% for value in ['pending', 'approved', 'rejected'] %}
+    <a class="btn btn--sm {% if active_status == value %}btn--dark{% else %}btn--ghost{% endif %}"
+       href="{{ url_for('admin.reviews_list', status=value) }}">{{ value|capitalize }}</a>
+  {% endfor %}
+</div>
+
+<div class="admin-card">
+  {% if reviews %}
+    {% for review in reviews %}
+      <div style="padding:14px 0;border-bottom:1px solid #eee">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div>
+            <strong>{{ review['name'] }}</strong>
+            <span class="badge">{{ review['status'] }}</span>
+            <div style="margin-top:4px">
+              {% for _ in range(review['rating']) %}★{% endfor %}{% for _ in range(5 - review['rating']) %}☆{% endfor %}
+              &middot;
+              {% if review['product_slug'] %}
+                <a href="{{ url_for('storefront.product_detail', slug=review['product_slug']) }}" target="_blank">{{ review['product_name'] }}</a>
+              {% else %}Product #{{ review['product_id'] }}{% endif %}
+            </div>
+          </div>
+          <span class="summary__note">{{ review['created_at'][:16].replace('T', ' ') }}</span>
+        </div>
+        {% if review['title'] %}<p style="margin:8px 0 2px"><b>{{ review['title'] }}</b></p>{% endif %}
+        <p style="margin:4px 0">{{ review['body'] }}</p>
+        <p class="summary__note">{% if review['order_id'] %}Verified purchase · {% endif %}{{ review['name'] }}</p>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          {% for status in ['approved', 'pending', 'rejected'] %}
+            {% if review['status'] != status %}
+              <form method="post" action="{{ url_for('admin.review_status', review_id=review['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <button class="btn btn--ghost btn--sm" type="submit">Mark {{ status }}</button>
+              </form>
+            {% endif %}
+          {% endfor %}
+          <form method="post" action="{{ url_for('admin.review_delete', review_id=review['id']) }}"
+                onsubmit="return confirm('Delete this review?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--ghost btn--sm" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="summary__note">No reviews in this view yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

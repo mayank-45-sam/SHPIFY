@@ -1,0 +1,266 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit product' if product else 'New product' }}{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">Catalog</span>
+    <h1 class="display" style="font-size:clamp(24px,4vw,36px)">
+      {{ product['name'] if product else 'New product' }}
+    </h1>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    {% if product %}
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('storefront.product_detail', slug=product['slug']) }}">View in store</a>
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.products_list') }}">Back to list</a>
+    {% else %}
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.products_list') }}">Back to list</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if errors %}
+  <ul class="error-list" role="alert">
+    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+  </ul>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="admin-grid admin-grid--2">
+    {#- Main fields -#}
+    <div class="admin-card">
+      <div class="admin-card__head"><h2 class="admin-card__title">Details</h2></div>
+
+      <div class="field">
+        <label for="name">Product name</label>
+        <input class="input" type="text" id="name" name="name" value="{{ values['name'] }}" required>
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea class="textarea" id="description" name="description">{{ values['description'] }}</textarea>
+        <span class="hint">Shown on the product page. Plain text, line breaks are kept.</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="category">Category</label>
+          <select class="select" id="category" name="category">
+            {% for category in categories %}
+              <option value="{{ category }}" {% if values['category'] == category %}selected{% endif %}>
+                {{ category_labels[category] }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="status">Status</label>
+          <select class="select" id="status" name="status">
+            <option value="draft" {% if values['status'] == 'draft' %}selected{% endif %}>Draft (hidden)</option>
+            <option value="published" {% if values['status'] == 'published' %}selected{% endif %}>Published (live)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="price">Price (&#8377;)</label>
+          <input class="input" type="text" id="price" name="price" inputmode="decimal"
+                 value="{{ '%.2f' % (values['price_cents'] / 100) }}" required>
+        </div>
+
+        <div class="field">
+          <label for="compare_at">Compare-at price (&#8377;)</label>
+          <input class="input" type="text" id="compare_at" name="compare_at" inputmode="decimal"
+                 value="{{ '%.2f' % (values['compare_at_cents'] / 100) if values['compare_at_cents'] else '' }}">
+          <span class="hint">Leave empty if it is not on offer.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="stock_mode">Stock behaviour</label>
+        <select class="select" id="stock_mode" name="stock_mode">
+          <option value="made_to_order" {% if values['stock_mode'] == 'made_to_order' %}selected{% endif %}>
+            Made to order (every size orderable, no stock numbers)
+          </option>
+          <option value="tracked" {% if values['stock_mode'] == 'tracked' %}selected{% endif %}>
+            Tracked (a size sells out when its stock hits zero)
+          </option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="supplier_sku">Supplier SKU</label>
+        <input class="input" type="text" id="supplier_sku" name="supplier_sku" value="{{ values['supplier_sku'] }}">
+        <span class="hint">The code the print supplier knows this design by.</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="meta_title">SEO title</label>
+          <input class="input" type="text" id="meta_title" name="meta_title" value="{{ values['meta_title'] }}">
+        </div>
+        <div class="field">
+          <label for="meta_description">SEO description</label>
+          <input class="input" type="text" id="meta_description" name="meta_description" value="{{ values['meta_description'] }}">
+        </div>
+      </div>
+
+      <div style="display:grid;gap:10px;margin-top:6px">
+        <label class="check">
+          <input type="checkbox" name="is_featured" {% if values['is_featured'] %}checked{% endif %}>
+          <span>Feature this product on the homepage</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="needs_review" {% if values['needs_review'] %}checked{% endif %}>
+          <span>Flag for review (artwork or details not confirmed yet)</span>
+        </label>
+      </div>
+
+      <div class="field" style="margin-top:12px">
+        <label for="review_note">Review note</label>
+        <input class="input" type="text" id="review_note" name="review_note" value="{{ values['review_note'] }}"
+               placeholder="e.g. Confirm which player is on the chest print">
+      </div>
+    </div>
+
+    {#- Sizes -#}
+    <div class="admin-card">
+      <div class="admin-card__head"><h2 class="admin-card__title">Sizes &amp; stock</h2></div>
+
+      <table class="size-table">
+        <thead>
+          <tr><th>On</th><th>Size</th><th>Stock</th><th>Price (Rs)</th><th>SKU</th></tr>
+        </thead>
+        <tbody>
+          {% for size in sizes %}
+            {% set on = size in values['sizes'] %}
+            <tr>
+              <td>
+                <input type="checkbox" name="size_{{ size }}" {% if on %}checked{% endif %}
+                       aria-label="Offer size {{ size }}">
+              </td>
+              <td><strong>{{ size }}</strong></td>
+              <td>
+                <input type="number" name="stock_{{ size }}" min="0" step="1"
+                       value="{{ values['stocks'].get(size, 0) }}"
+                       {% if values['stock_mode'] != 'tracked' %}disabled{% endif %}>
+              </td>
+              <td>
+                <input type="text" name="price_{{ size }}" inputmode="decimal"
+                       value="{% if values['prices'].get(size) %}{{ values['prices'].get(size) // 100 }}{% endif %}"
+                       placeholder="{{ values['price_cents'] // 100 }}">
+              </td>
+              <td>
+                <input type="text" name="sku_{{ size }}" value="{{ values['skus'].get(size, '') }}"
+                       placeholder="{{ size }}-01">
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p class="summary__note">
+        Stock only matters when the stock behaviour is "tracked". For made-to-order
+        products the stock column is ignored and every offered size can be ordered.
+        Leave a size price empty to use the product price.
+      </p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn--primary" type="submit">
+          {{ 'Save changes' if product else 'Create product' }}
+        </button>
+        {% if product %}
+          <button class="btn btn--danger" type="submit" form="delete-product">Delete</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+
+{#- Images -#}
+{% if product %}
+  <div class="admin-card" style="margin-top:18px">
+    <div class="admin-card__head">
+      <h2 class="admin-card__title">Images</h2>
+      <span style="font-size:12.5px;color:var(--muted)">{{ product['images']|length }} attached</span>
+    </div>
+
+    {% if product['images'] %}
+      <div class="img-grid" style="margin-bottom:18px">
+        {% for image in product['images'] %}
+          <div class="img-item">
+            <div class="img-item__media">
+              <img src="{{ url_for('static', filename='img/products/' ~ image['filename']) }}"
+                   alt="{{ image['alt_text'] }}" loading="lazy">
+            </div>
+            <div class="img-item__body">
+              <form method="post" action="{{ url_for('admin.image_alt', product_id=product['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="image_id" value="{{ image['id'] }}">
+                <input type="hidden" name="filename" value="{{ image['filename'] }}">
+                <div class="field" style="margin-bottom:8px">
+                  <label>Alt text</label>
+                  <input class="input" type="text" name="alt_text" value="{{ image['alt_text'] }}">
+                </div>
+                <button class="btn btn--ghost btn--sm btn--block" type="submit">Save alt text</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.image_delete', image_id=image['id']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn--danger btn--sm btn--block" type="submit"
+                        data-confirm="Remove this image from the product?">Remove</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="admin-grid admin-grid--2">
+      <form method="post" action="{{ url_for('admin.product_images', product_id=product['id']) }}"
+            enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px">Upload images</h3>
+        <div class="dropzone" data-dropzone>
+          <p style="margin:0 0 10px;font-size:13px">Drop images here or choose files</p>
+          <input type="file" name="images" accept="image/*" multiple data-image-input>
+        </div>
+        <div class="img-grid" data-image-preview style="margin-top:12px"></div>
+        <p class="summary__note">Images are resized to 1200px and converted to JPEG.</p>
+        <button class="btn btn--dark btn--sm" type="submit" style="margin-top:10px">Upload</button>
+      </form>
+
+      <form method="post" action="{{ url_for('admin.product_images_link', product_id=product['id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:8px">Attach from the library</h3>
+        <div class="field">
+          <label for="filename">Image</label>
+          <select class="select" id="filename" name="filename">
+            {% for image in image_library %}
+              <option value="{{ image['filename'] }}">
+                {{ image['filename'] }}{% if image['used_by'] %} (used by {{ image['used_by'] | join(', ') }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="alt_text">Alt text</label>
+          <input class="input" type="text" id="alt_text" name="alt_text" value="{{ product['name'] }}">
+        </div>
+        <button class="btn btn--dark btn--sm" type="submit">Attach image</button>
+      </form>
+    </div>
+  </div>
+
+  <form id="delete-product" method="post" action="{{ url_for('admin.product_delete', product_id=product['id']) }}"
+        style="margin-top:18px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  </form>
+{% else %}
+  <div class="admin-card" style="margin-top:18px">
+    <h2 class="admin-card__title" style="margin-bottom:8px">Images come next</h2>
+    <p class="summary__note">Create the product first, then attach the artwork from your library or upload it.</p>
+  </div>
+{% endif %}
+{% endblock %}

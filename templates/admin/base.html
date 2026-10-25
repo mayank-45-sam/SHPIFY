@@ -1,0 +1,59 @@
+{#- Admin layout -#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin{% endblock %} - {{ site_name }}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div class="admin-shell">
+  <div>
+    <header class="admin-top">
+      <a class="wordmark" href="{{ url_for('admin.dashboard') }}">
+        <span class="wordmark__mark" aria-hidden="true">P</span>
+        <span class="wordmark__text">{{ site_name }} admin</span>
+      </a>
+
+      <nav class="admin-nav" aria-label="Admin">
+        <a href="{{ url_for('admin.dashboard') }}" {% if request.endpoint == 'admin.dashboard' %}class="is-active"{% endif %}>Dashboard</a>
+        <a href="{{ url_for('admin.products_list') }}" {% if request.endpoint and request.endpoint.startswith('admin.product') %}class="is-active"{% endif %}>Products</a>
+        <a href="{{ url_for('admin.orders_list') }}" {% if request.endpoint and request.endpoint.startswith('admin.order') %}class="is-active"{% endif %}>Orders</a>
+        <a href="{{ url_for('admin.coupons_list') }}" {% if request.endpoint and request.endpoint.startswith('admin.coupon') %}class="is-active"{% endif %}>Coupons</a>
+        <a href="{{ url_for('admin.reviews_list') }}" {% if request.endpoint and request.endpoint.startswith('admin.review') %}class="is-active"{% endif %}>Reviews</a>
+        <a href="{{ url_for('admin.returns_list') }}" {% if request.endpoint and request.endpoint.startswith('admin.return') %}class="is-active"{% endif %}>Returns</a>
+        <a href="{{ url_for('admin.abandoned_list') }}" {% if request.endpoint == 'admin.abandoned_list' %}class="is-active"{% endif %}>Abandoned</a>
+        <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}class="is-active"{% endif %}>Settings</a>
+        <a href="{{ url_for('admin.logout') }}">Sign out</a>
+      </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes wrap" role="status" style="padding-top:16px">
+          {% for category, message in messages %}
+            <div class="flash flash--{{ category }}">
+              <span>{{ message }}</span>
+              <button type="button" class="flash__close" data-dismiss aria-label="Dismiss">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="admin-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

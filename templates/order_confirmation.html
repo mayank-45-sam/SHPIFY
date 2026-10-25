@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order['order_number'] }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="wrap wrap--narrow">
+    <div class="confirm-card">
+      <div class="confirm-head">
+        <div>
+          <span class="eyebrow">Order {{ order['order_number'] }}</span>
+          <h1 class="display" style="margin-top:10px">
+            {% if order['payment_status'] == 'paid' %}
+              Payment received
+            {% elif order['payment_status'] == 'cod' %}
+              Order confirmed
+            {% elif order['payment_status'] == 'submitted' %}
+              Payment on its way
+            {% elif order['payment_status'] == 'failed' %}
+              Payment not completed
+            {% elif test_mode %}
+              Test order saved
+            {% else %}
+              Order received
+            {% endif %}
+          </h1>
+        </div>
+        <span class="badge {% if order['payment_status'] == 'paid' %}badge--live{% elif test_mode %}badge--test{% endif %}">
+          {{ order['status_label'] }}
+        </span>
+      </div>
+
+      {% if test_mode %}
+        <div class="notice notice--warn" style="margin-bottom:18px">
+          <strong>This is a test order.</strong>
+          No payment method is set up on this server, so no money was charged and no
+          payment was processed. Everything else - the order, the items, the tracking
+          page - works exactly as it will in production.
+        </div>
+      {% elif order['payment_status'] == 'paid' %}
+        <div class="notice notice--ok" style="margin-bottom:18px">
+          <strong>We have your payment.</strong>
+          Your tee goes on the press next.
+        </div>
+      {% elif order['payment_status'] == 'cod' %}
+        <div class="notice notice--info" style="margin-bottom:18px">
+          <strong>Cash on delivery.</strong>
+          Please keep &#8377;{{ money(order['total_cents']) }} ready. You pay the courier
+          when your order arrives.
+        </div>
+      {% elif order['payment_status'] == 'submitted' %}
+        <div class="notice notice--info" style="margin-bottom:18px">
+          <strong>Thanks - we are checking your payment.</strong>
+          We confirm every UPI payment by hand as soon as it lands. Your order is
+          saved and you will get a message once the money is confirmed.
+        </div>
+      {% elif order['payment_status'] == 'failed' %}
+        <div class="notice notice--error" style="margin-bottom:18px">
+          <strong>The payment could not be verified.</strong>
+          If money was debited from your account it will be refunded automatically.
+          Your order is saved and you can pay again from the order page.
+        </div>
+      {% elif can_pay_again %}
+        <div class="notice notice--info" style="margin-bottom:18px">
+          <strong>Your order is waiting for payment.</strong>
+          {% if order['payment_method'] == 'upi' %}
+            Scan the UPI QR code below - the amount
+            &#8377;{{ money(order['total_cents']) }} is already filled in - and pay it to
+            {{ upi['id'] }}.
+          {% else %}
+            Press "Pay now" to open the secure payment window.
+          {% endif %}
+          Your tee goes on the press as soon as the payment lands.
+        </div>
+      {% endif %}
+
+      {#- QR code for an unpaid UPI order -#}
+      {% if can_pay_again and order['payment_method'] == 'upi' and upi %}
+        <div class="qr-panel qr-panel--inline">
+          {% if upi_qr %}
+            <img class="qr-panel__code" src="{{ upi_qr }}"
+                 alt="UPI QR code for {{ site_name }}" width="220" height="220">
+          {% else %}
+            <img class="qr-panel__code" src="{{ upi['qr_url'] }}"
+                 alt="UPI QR code for {{ site_name }}" width="220" height="220">
+          {% endif %}
+          <dl class="kv qr-panel__details">
+            <dt>UPI ID</dt>
+            <dd><strong>{{ upi['id'] }}</strong></dd>
+            <dt>Amount</dt>
+            <dd><strong>&#8377;{{ money(order['total_cents']) }}</strong></dd>
+          </dl>
+        </div>
+
+        <form method="post" action="{{ url_for('checkout.upi_payment_sent') }}"
+              style="margin-bottom:18px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="order_number" value="{{ order['order_number'] }}">
+          <input type="hidden" name="phone" value="{{ order['phone'] }}">
+          <button class="btn btn--dark btn--block" type="submit">I have made the payment</button>
+          <p class="summary__note" style="margin-top:8px">
+            This tells us to check our UPI app. We confirm every payment by hand,
+            so the order is not marked paid until the money is actually there.
+          </p>
+        </form>
+      {% endif %}
+
+      {#- Items -#}
+      <h2 class="cart-panel__title">Items</h2>
+      <div class="summary-lines">
+        {% for item in order['items'] %}
+          <div class="summary-line">
+            <div class="summary-line__media">
+              {% if item['image_url'] %}
+                <img src="{{ item['image_url'] }}"
+                     alt="{{ item['product_name'] }}" loading="lazy">
+              {% endif %}
+            </div>
+            <div>
+              <div class="summary-line__name">{{ item['product_name'] }}</div>
+              <div class="summary-line__meta">Size {{ item['size'] }} &times; {{ item['quantity'] }}</div>
+              {% if item['custom_front'] or item['custom_back'] %}
+                <div class="summary-line__meta">Custom front &amp; back print</div>
+              {% endif %}
+            </div>
+            <div class="summary-line__price">&#8377;{{ money(item['unit_price_cents'] * item['quantity']) }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="summary" style="margin-bottom:18px">
+        <div class="summary__row"><span>Subtotal</span><span>&#8377;{{ money(order['subtotal_cents']) }}</span></div>
+        <div class="summary__row">
+          <span>Shipping</span>
+          <span>{% if order['shipping_cents'] %}&#8377;{{ money(order['shipping_cents']) }}{% else %}Free{% endif %}</span>
+        </div>
+        {% if order['discount_cents'] %}
+          <div class="summary__row" style="color:#157347">
+            <span>Discount{% if order['coupon_code'] %} ({{ order['coupon_code'] }}){% endif %}</span>
+            <span>-&#8377;{{ money(order['discount_cents']) }}</span>
+          </div>
+        {% endif %}
+        {% if order['cod_fee_cents'] %}
+          <div class="summary__row"><span>COD fee</span><span>&#8377;{{ money(order['cod_fee_cents']) }}</span></div>
+        {% endif %}
+        <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(order['total_cents']) }}</span></div>
+      </div>
+
+      {#- Delivery -#}
+      <h2 class="cart-panel__title">Delivery</h2>
+      <dl class="kv" style="margin-bottom:20px">
+        <dt>Name</dt><dd>{{ order['customer_name'] }}</dd>
+        <dt>Phone</dt><dd>{{ order['phone'] }}</dd>
+        <dt>Email</dt><dd>{{ order['email'] }}</dd>
+        <dt>Address</dt>
+        <dd>
+          {{ order['address_line1'] }}{% if order['address_line2'] %}, {{ order['address_line2'] }}{% endif %},
+          {{ order['city'] }}, {{ order['state'] }} - {{ order['pincode'] }}
+        </dd>
+        {% if order['tracking_number'] %}
+          <dt>Tracking</dt>
+          <dd>{{ order['carrier'] }} {{ order['tracking_number'] }}</dd>
+        {% endif %}
+        {% if order['delivery_estimate'] %}
+          <dt>Estimated delivery</dt>
+          <dd>{{ order['delivery_estimate'] }}</dd>
+        {% endif %}
+      </dl>
+
+      {#- Invoice & returns -#}
+      <h2 class="cart-panel__title">Invoice &amp; returns</h2>
+      <p class="summary__note" style="margin-top:-4px">
+        Need a GST invoice? Open it below and use your browser's Print / Save as PDF.
+      </p>
+      <a class="btn btn--ghost" style="margin-bottom:18px"
+         href="{{ url_for('checkout.invoice', order_number=order['order_number']) }}">
+        View invoice
+      </a>
+
+      {% if return_request %}
+        <div class="notice notice--info" style="margin-bottom:18px">
+          <strong>Return requested.</strong>
+          Status: {{ return_request['status'] }}. We will contact you on {{ order['phone'] }}.
+        </div>
+      {% elif can_request_return %}
+        <form method="post" action="{{ url_for('checkout.request_return', order_number=order['order_number']) }}"
+              style="margin-bottom:18px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="return-reason">Request a return</label>
+            <select class="input" id="return-reason" name="reason" required>
+              <option value="size">Wrong size</option>
+              <option value="damaged">Damaged or defective</option>
+              <option value="wrong_item">Wrong item received</option>
+              <option value="not_as_described">Not as described</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="return-details">Tell us a little more</label>
+            <textarea class="textarea" id="return-details" name="details" maxlength="800"></textarea>
+          </div>
+          <button class="btn btn--ghost" type="submit">Request return</button>
+          <p class="summary__note">Returns are accepted within 7 days of delivery for unworn, tagged tees.</p>
+        </form>
+      {% endif %}
+
+      {#- Timeline -#}
+      {% if order['events'] %}
+        <h2 class="cart-panel__title">Progress</h2>
+        <ul class="timeline">
+          {% for event in order['events'] %}
+            <li class="timeline__item {% if loop.first %}timeline__item--current{% endif %}">
+              <span class="timeline__dot">
+                <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+              </span>
+              <div>
+                <div class="timeline__title">{{ event['message'] or event['status'] }}</div>
+                <div class="timeline__meta">{{ event['created_at'][:16].replace('T', ' ') }}</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px">
+        {% if can_pay_again %}
+          <a class="btn btn--primary" href="{{ url_for('checkout.pay', order_number=order['order_number']) }}">Pay now</a>
+        {% endif %}
+        <a class="btn btn--dark" href="{{ url_for('storefront.shop') }}">Keep shopping</a>
+        <a class="btn btn--ghost" href="{{ url_for('storefront.track_order') }}">Track this order</a>
+        <button class="btn btn--ghost" type="button" onclick="window.print()">Print receipt</button>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

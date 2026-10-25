@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Your cart - {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('storefront.home') }}">Home</a>
+      <span>/</span>
+      <span>Cart</span>
+    </nav>
+    <h1 class="display">Your cart</h1>
+    <p>{{ totals['item_count'] }} item{% if totals['item_count'] != 1 %}s{% endif %} in the bag.</p>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    {% if not lines %}
+      <div class="empty">
+        <div class="empty__icon">
+          <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        </div>
+        <h3>Your cart is empty</h3>
+        <p>Every good wardrobe starts with one tee that does the talking.</p>
+        <a class="btn btn--primary" href="{{ url_for('storefront.shop') }}">Shop the collection</a>
+      </div>
+    {% else %}
+      <div class="cart-layout">
+        {#- Lines -#}
+        <div class="cart-panel">
+          <h2 class="cart-panel__title">Items</h2>
+          {% for line in lines %}
+            <div class="cart-line" style="margin-bottom:12px">
+              <div class="cart-line__media">
+                {% if line['image_url'] %}
+                  <img src="{{ line['image_url'] }}"
+                       alt="{{ line['name'] }}" loading="lazy">
+                {% endif %}
+              </div>
+              <div class="cart-line__info">
+                <div class="cart-line__name">{{ line['name'] }}</div>
+                <div class="cart-line__meta">Size {{ line['size'] }} &middot; &#8377;{{ line['unit_price_display'] }} each</div>
+                {% if line['is_custom'] %}
+                  <div class="cart-line__meta">Custom front &amp; back print</div>
+                {% endif %}
+                {% if line['issue'] %}
+                  <div class="cart-line__issue">{{ line['issue'] }}</div>
+                {% endif %}
+                <div class="cart-line__row">
+                  <div class="qty">
+                    <button type="button" data-cart-dec="{{ line['cart_id'] }}" aria-label="Decrease quantity">&minus;</button>
+                    <output>{{ line['quantity'] }}</output>
+                    <button type="button" data-cart-inc="{{ line['cart_id'] }}" aria-label="Increase quantity">+</button>
+                  </div>
+                  <div class="cart-line__price">&#8377;{{ line['line_total_display'] }}</div>
+                </div>
+                <div class="cart-line__row">
+                  <button type="button" class="cart-line__remove" data-cart-remove="{{ line['cart_id'] }}">Remove</button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          <button type="button" class="cart-line__remove" data-cart-clear style="margin-top:6px">Empty the cart</button>
+        </div>
+
+        {#- Summary -#}
+        <aside class="cart-panel">
+          <h2 class="cart-panel__title">Summary</h2>
+          <div class="summary">
+            <div class="summary__row"><span>Subtotal</span><span>&#8377;{{ money(totals['subtotal_cents']) }}</span></div>
+            <div class="summary__row">
+              <span>Shipping</span>
+              <span>{% if totals['shipping_cents'] %}&#8377;{{ money(totals['shipping_cents']) }}{% else %}Free{% endif %}</span>
+            </div>
+            <div class="summary__row summary__row--total"><span>Total</span><span>&#8377;{{ money(totals['total_cents']) }}</span></div>
+          </div>
+          <p class="summary__note">{{ totals['shipping_message'] }}</p>
+          <p class="summary__note">Taxes included. UPI, cards, net banking, wallets and cash on delivery.</p>
+          <a class="btn btn--primary btn--block" style="margin-top:14px"
+             href="{{ url_for('checkout.checkout') }}">Checkout</a>
+          <a class="btn btn--ghost btn--block" style="margin-top:8px" href="{{ url_for('storefront.shop') }}">Keep shopping</a>
+        </aside>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

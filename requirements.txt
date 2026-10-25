@@ -1,0 +1,6 @@
+Flask>=3.0,<4.0
+python-dotenv>=1.0
+Pillow>=10.0
+requests>=2.31
+segno>=1.6
+psycopg[binary,pool]>=3.2

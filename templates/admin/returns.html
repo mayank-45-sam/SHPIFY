@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}
+{% block title %}Returns{% endblock %}
+
+{% block content %}
+<div class="section-head">
+  <div class="section-head__text">
+    <span class="eyebrow">After sales</span>
+    <h1 class="display" style="font-size:clamp(26px,4vw,38px)">Returns</h1>
+  </div>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+  <a class="btn btn--sm {% if not active_status %}btn--dark{% else %}btn--ghost{% endif %}" href="{{ url_for('admin.returns_list') }}">All</a>
+  {% for status in statuses %}
+    <a class="btn btn--sm {% if active_status == status %}btn--dark{% else %}btn--ghost{% endif %}"
+       href="{{ url_for('admin.returns_list', status=status) }}">{{ status|capitalize }}</a>
+  {% endfor %}
+</div>
+
+<div class="admin-card">
+  {% if returns %}
+    <div class="table-scroll">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Order</th><th>Customer</th><th>Reason</th><th>Status</th><th>Requested</th><th>Update</th></tr>
+        </thead>
+        <tbody>
+          {% for item in returns %}
+            <tr>
+              <td><a href="{{ url_for('admin.order_detail', order_id=item['order_id']) }}">{{ item['order_number'] }}</a></td>
+              <td>{{ item['customer_name'] }}<br><span class="summary__note">{{ item['phone'] }}</span></td>
+              <td>
+                {{ item['reason'] }}
+                {% if item['details'] %}<br><span class="summary__note">{{ item['details'] }}</span>{% endif %}
+              </td>
+              <td><span class="badge">{{ item['status'] }}</span></td>
+              <td>{{ item['created_at'][:10] }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin.return_status', return_id=item['id']) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <select class="input" name="status" style="min-width:130px">
+                    {% for status in statuses %}
+                      <option value="{{ status }}" {% if item['status'] == status %}selected{% endif %}>{{ status|capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn--ghost btn--sm" type="submit" style="margin-top:6px">Save</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="summary__note">No return requests in this view.</p>
+  {% endif %}
+</div>
+{% endblock %}
