@@ -201,13 +201,21 @@ def main() -> int:
         address = payload["shipping_address"]
         check("the first name is split off", address["first_name"] == "Test")
         check("the last name is split off", address["last_name"] == "Customer")
-        check("the address is joined", address["address"] == "12 MG Road, Near the park")
+        check("the first address line uses address1", address["address1"] == "12 MG Road")
+        check("the second address line uses address2",
+              address["address2"] == "Near the park")
+        check("the phone is sent", address["phone"] == "9876543210", address.get("phone"))
+        check("the email is sent", address["email"] == "test@example.com", address.get("email"))
         check("the city is sent", address["city"] == "Bengaluru")
         check("the state is sent as province", address["province"] == "Karnataka")
         check("the pincode is sent as zip", address["zip"] == "560001")
         check("the country is India", address["country_code"] == "IN")
 
         print("\n=== D. Supplier is not connected ===")
+        # Credentials in .env must not turn this offline test into a network call.
+        app.config["QIKINK_CLIENT_ID"] = ""
+        app.config["QIKINK_CLIENT_SECRET"] = ""
+        app.config["QIKINK_SANDBOX_SECRET"] = ""
         check("the supplier is not configured", supplier.supplier_configured() is False)
         status = supplier.supplier_status()
         check("the status says it is not configured", status["configured"] is False)

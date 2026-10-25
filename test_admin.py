@@ -70,6 +70,9 @@ def main() -> int:
     test_support.prepare(app, str(TEST_DB))
     # The tests must not depend on what the shop owner has in .env.
     set_payment_methods(app, [])
+    app.config["QIKINK_CLIENT_ID"] = ""
+    app.config["QIKINK_CLIENT_SECRET"] = ""
+    app.config["QIKINK_SANDBOX_SECRET"] = ""
 
     with app.app_context():
         db.init_db()

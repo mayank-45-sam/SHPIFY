@@ -166,10 +166,6 @@ def build_supplier_payload(order: Dict[str, Any], lines: List[Dict[str, Any]]) -
             }
         )
 
-    address = customer.get("address_line1", "")
-    if customer.get("address_line2"):
-        address = f"{address}, {customer['address_line2']}"
-
     name_parts = (customer.get("customer_name") or "Customer").strip().split(" ", 1)
     first_name = name_parts[0]
     last_name = name_parts[1] if len(name_parts) > 1 else ""
@@ -181,10 +177,16 @@ def build_supplier_payload(order: Dict[str, Any], lines: List[Dict[str, Any]]) -
         "gateway": "Prepaid",
         "total_order_value": f"{order['total_cents'] / 100:.2f}",
         "line_items": items,
+        # Qikink names the address fields address1/address2 and requires the
+        # phone and email of the recipient. Sending "address" gets the whole
+        # order rejected with "Unexpected fields in shipping_address".
         "shipping_address": {
             "first_name": first_name,
             "last_name": last_name,
-            "address": address,
+            "address1": customer.get("address_line1", ""),
+            "address2": customer.get("address_line2", ""),
+            "phone": customer.get("phone", ""),
+            "email": customer.get("email", ""),
             "city": customer.get("city", ""),
             "province": customer.get("state", ""),
             "zip": customer.get("pincode", ""),
